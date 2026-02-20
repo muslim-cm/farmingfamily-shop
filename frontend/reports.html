@@ -1,0 +1,669 @@
+<!doctype html>
+<html lang="bn">
+  <head>
+    <!-- PWA Support - Android + iOS -->
+    <link rel="manifest" href="manifest.json" />
+
+    <!-- iOS Specific -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Farming Family" />
+
+    <!-- Android/Chrome -->
+    <meta name="theme-color" content="#764ba2" />
+
+    <!-- iOS Icons -->
+    <link rel="apple-touch-icon" href="icons/icon-152x152.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152x152.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-192x192.png" />
+    <link rel="apple-touch-icon" sizes="167x167" href="icons/icon-152x152.png" />
+
+    <!-- iOS Splash Screens (optional) -->
+    <link
+      rel="apple-touch-startup-image"
+      href="icons/splash-640x1136.png"
+      media="(device-width: 320px) and (device-height: 568px)"
+    />
+
+    <!-- PDF Generation Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes"
+    />
+    <title>রিপোর্ট - Farming Family</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+
+    <!-- PWA Manifest (duplicate removed) -->
+    <meta name="theme-color" content="#764ba2" />
+
+    <style>
+      /* Reports Page Specific Styles - ULTRA COMPACT */
+      .reports-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px; /* Reduced from 25px */
+      }
+
+      .report-card {
+        background: white;
+        border-radius: 16px; /* Reduced from 20px */
+        padding: 18px; /* Reduced from 25px */
+        margin-bottom: 18px; /* Reduced from 25px */
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05); /* Reduced */
+      }
+
+      .report-header {
+        display: flex;
+        align-items: center;
+        gap: 12px; /* Reduced from 15px */
+        margin-bottom: 15px; /* Reduced from 20px */
+        padding-bottom: 10px; /* Reduced from 15px */
+        border-bottom: 2px solid #f0f2f5;
+      }
+
+      .report-header i {
+        width: 36px; /* Reduced from 45px */
+        height: 36px; /* Reduced from 45px */
+        background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+        border-radius: 10px; /* Reduced from 12px */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px; /* Reduced from 24px */
+        color: #667eea;
+      }
+
+      .report-header h2 {
+        color: #2d3748;
+        font-size: 18px; /* Reduced from 22px */
+        font-weight: 600;
+        margin: 0;
+      }
+
+      .report-header p {
+        color: #718096;
+        font-size: 12px; /* Reduced from 14px */
+        margin: 3px 0 0 0; /* Reduced */
+      }
+
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px; /* Reduced from 15px */
+        margin-bottom: 15px; /* Reduced from 20px */
+      }
+
+      .stat-item {
+        background: #f8fafc;
+        border-radius: 10px; /* Reduced from 12px */
+        padding: 10px; /* Reduced from 15px */
+        text-align: center;
+      }
+
+      .stat-label {
+        color: #718096;
+        font-size: 11px; /* Reduced from 13px */
+        margin-bottom: 3px; /* Reduced from 5px */
+      }
+
+      .stat-value {
+        color: #2d3748;
+        font-size: 20px; /* Reduced from 24px */
+        font-weight: 700;
+      }
+
+      .stat-value small {
+        font-size: 12px; /* Reduced from 14px */
+        font-weight: normal;
+        color: #718096;
+      }
+
+      .report-actions {
+        display: flex;
+        gap: 10px; /* Reduced from 15px */
+        margin-top: 15px; /* Reduced from 20px */
+      }
+
+      .btn-report {
+        flex: 1;
+        padding: 8px; /* Reduced from 12px */
+        border: none;
+        border-radius: 8px; /* Reduced from 10px */
+        font-size: 12px; /* Reduced from 14px */
+        font-weight: 600;
+        color: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px; /* Reduced from 8px */
+        transition: all 0.3s;
+      }
+
+      .btn-report:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1); /* Reduced */
+      }
+
+      .btn-pdf {
+        background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+      }
+
+      .btn-whatsapp {
+        background: linear-gradient(135deg, #25d366, #128c7e);
+      }
+
+      .btn-view {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+      }
+
+      .product-list {
+        margin-top: 15px; /* Reduced from 20px */
+      }
+
+      .product-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0; /* Reduced from 12px */
+        border-bottom: 1px solid #eef2f7;
+        font-size: 13px; /* Added */
+      }
+
+      .product-name {
+        font-weight: 600;
+        color: #2d3748;
+      }
+
+      .product-stats {
+        color: #718096;
+        font-size: 12px; /* Reduced from 14px */
+      }
+
+      .inventory-alert {
+        background: #fff3e0;
+        border-left: 4px solid #ff9800; /* Reduced from 5px */
+        border-radius: 8px; /* Reduced from 12px */
+        padding: 10px 15px; /* Reduced from 15px 20px */
+        margin-bottom: 15px; /* Reduced from 20px */
+        display: flex;
+        align-items: center;
+        gap: 10px; /* Reduced from 15px */
+      }
+
+      .inventory-alert i {
+        color: #ff9800;
+        font-size: 20px; /* Reduced from 24px */
+      }
+
+      .inventory-alert span {
+        color: #e65100;
+        font-weight: 600;
+        font-size: 14px; /* Added */
+      }
+
+      /* Menu toggle for mobile */
+      .menu-toggle {
+        display: none;
+        background: none;
+        border: none;
+        font-size: 22px; /* Reduced from 24px */
+        color: #666;
+        cursor: pointer;
+      }
+
+      /* Month/Year Selectors */
+      .month-selector {
+        display: flex;
+        gap: 8px; /* Reduced from 10px */
+        margin-bottom: 15px; /* Reduced from 20px */
+      }
+
+      .month-selector select,
+      .month-selector button {
+        padding: 8px; /* Reduced from 10px */
+        border: 2px solid #e2e8f0;
+        border-radius: 8px; /* Reduced from 10px */
+        font-size: 13px; /* Added */
+      }
+
+      .month-selector button {
+        padding: 8px 16px; /* Reduced from 10px 20px */
+        background: #667eea;
+        color: white;
+        border: none;
+        cursor: pointer;
+      }
+
+      @media (max-width: 1024px) {
+        .reports-container {
+          grid-template-columns: 1fr;
+          gap: 12px; /* Added */
+        }
+
+        .stats-grid {
+          grid-template-columns: 1fr 1fr;
+          gap: 8px; /* Added */
+        }
+
+        .report-actions {
+          flex-direction: column;
+          gap: 6px; /* Added */
+        }
+
+        .report-actions button {
+          width: 100%;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .stats-grid {
+          grid-template-columns: 1fr;
+          gap: 6px;
+        }
+
+        .menu-toggle {
+          display: block;
+        }
+
+        .report-card {
+          padding: 15px;
+          margin-bottom: 15px;
+        }
+
+        .stat-value {
+          font-size: 18px;
+        }
+
+        .btn-report {
+          padding: 8px;
+          font-size: 12px;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .report-header h2 {
+          font-size: 16px;
+        }
+
+        .stat-value {
+          font-size: 16px;
+        }
+
+        .product-item {
+          font-size: 12px;
+        }
+      }
+
+      /* Heading styles */
+      h3 {
+        font-size: 16px !important; /* Reduced from 18px */
+        margin-bottom: 10px !important; /* Reduced from 15px */
+      }
+    </style>
+  </head>
+  <body>
+    <div class="dashboard-container">
+      <!-- SIDEBAR - LEFT SIDE -->
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+          <div class="shop-logo-small">
+            <i class="fas fa-store"></i>
+          </div>
+          <h2>Farming Family</h2>
+          <p class="user-role" id="userRoleDisplay">লোড হচ্ছে...</p>
+        </div>
+
+        <nav class="sidebar-nav">
+          <ul id="mainMenu">
+            <li>
+              <a href="dashboard.html">
+                <i class="fas fa-home"></i>
+                <span>ড্যাশবোর্ড</span>
+              </a>
+            </li>
+            <li>
+              <a href="sales.html">
+                <i class="fas fa-cash-register"></i>
+                <span>বিক্রয়</span>
+              </a>
+            </li>
+            <li>
+              <a href="products.html">
+                <i class="fas fa-box"></i>
+                <span>পণ্য</span>
+              </a>
+            </li>
+            <li>
+              <a href="expenses.html">
+                <i class="fas fa-arrow-down"></i>
+                <span>খরচ ও ক্রয়</span>
+              </a>
+            </li>
+            <li class="active">
+              <a href="reports.html">
+                <i class="fas fa-chart-bar"></i>
+                <span>রিপোর্ট</span>
+              </a>
+            </li>
+            <li class="logout">
+              <a href="#" id="logoutBtn">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>লগআউট</span>
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </aside>
+
+      <!-- MAIN CONTENT - RIGHT SIDE -->
+      <main class="main-content">
+        <header class="top-bar">
+          <button id="menuToggle" class="menu-toggle">
+            <i class="fas fa-bars"></i>
+          </button>
+          <h1>রিপোর্ট</h1>
+          <div class="user-info">
+            <span id="userName">অতিথি</span>
+            <i class="fas fa-user-circle"></i>
+          </div>
+        </header>
+
+        <div class="content">
+          <div class="reports-container">
+            <!-- LEFT COLUMN - Daily Report & Inventory -->
+            <div>
+              <!-- Daily Report Card -->
+              <div class="report-card">
+                <div class="report-header">
+                  <i class="fas fa-calendar-day"></i>
+                  <div>
+                    <h2>দৈনিক রিপোর্ট</h2>
+                    <p id="dailyReportDate">আজকে: ফেব্রুয়ারি ১৩, ২০২৬</p>
+                  </div>
+                </div>
+
+                <div id="dailyReportContent">
+                  <div class="stats-grid">
+                    <div class="stat-item">
+                      <div class="stat-label">মোট বিক্রয়</div>
+                      <div class="stat-value" id="dailyTotalSales">০.০০</div>
+                    </div>
+                    <div class="stat-item">
+                      <div class="stat-label">মোট লেনদেন</div>
+                      <div class="stat-value" id="dailyTransactions">০</div>
+                    </div>
+                    <div class="stat-item">
+                      <div class="stat-label">মোট খরচ</div>
+                      <div class="stat-value" id="dailyTotalExpenses">০.০০</div>
+                    </div>
+                    <div class="stat-item">
+                      <div class="stat-label">নিট মুনাফা</div>
+                      <div class="stat-value" id="dailyNetProfit">০.০০</div>
+                    </div>
+                  </div>
+
+                  <div class="inventory-alert" id="lowStockAlert" style="display: none">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <div>
+                      <span>স্টক সতর্কতা!</span>
+                      <p id="lowStockCount">০টি পণ্যের স্টক কম</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="report-actions">
+                  <button class="btn-report btn-pdf" onclick="generateDailyPDF()">
+                    <i class="fas fa-file-pdf"></i> PDF
+                  </button>
+                  <button class="btn-report btn-whatsapp" onclick="shareDailyWhatsApp()">
+                    <i class="fab fa-whatsapp"></i> WhatsApp
+                  </button>
+                  <button class="btn-report btn-view" onclick="viewDailyReport()">
+                    <i class="fas fa-eye"></i> দেখুন
+                  </button>
+                </div>
+              </div>
+
+              <!-- Inventory Report Card -->
+              <div class="report-card">
+                <div class="report-header">
+                  <i class="fas fa-boxes"></i>
+                  <div>
+                    <h2>ইনভেন্টরি</h2>
+                    <p>স্টক ও পণ্যের বিবরণ</p>
+                  </div>
+                </div>
+
+                <div id="inventoryReportContent">
+                  <div class="stats-grid">
+                    <div class="stat-item">
+                      <div class="stat-label">মোট পণ্য</div>
+                      <div class="stat-value" id="totalProducts">১২</div>
+                    </div>
+                    <div class="stat-item">
+                      <div class="stat-label">মোট মূল্য</div>
+                      <div class="stat-value" id="totalStockValue">৭৭,৮০০</div>
+                    </div>
+                    <div class="stat-item">
+                      <div class="stat-label">স্টক কম</div>
+                      <div class="stat-value" id="lowStockItems">০</div>
+                    </div>
+                    <div class="stat-item">
+                      <div class="stat-label">স্টক শেষ</div>
+                      <div class="stat-value" id="outOfStockItems">০</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="report-actions">
+                  <button class="btn-report btn-pdf" onclick="generateInventoryPDF()">
+                    <i class="fas fa-file-pdf"></i> PDF
+                  </button>
+                  <button class="btn-report btn-whatsapp" onclick="shareInventoryWhatsApp()">
+                    <i class="fab fa-whatsapp"></i> WhatsApp
+                  </button>
+                  <button class="btn-report btn-view" onclick="viewInventoryReport()">
+                    <i class="fas fa-eye"></i> দেখুন
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- RIGHT COLUMN - Monthly Report -->
+            <div>
+              <div class="report-card">
+                <div class="report-header">
+                  <i class="fas fa-calendar-alt"></i>
+                  <div>
+                    <h2>মাসিক রিপোর্ট</h2>
+                    <p id="monthlyReportDate">ফেব্রুয়ারি ২০২৬</p>
+                  </div>
+                </div>
+
+                <div class="month-selector" style="display: flex; gap: 8px; margin-bottom: 15px">
+                  <select
+                    id="monthSelector"
+                    style="
+                      flex: 1;
+                      padding: 8px;
+                      border: 2px solid #e2e8f0;
+                      border-radius: 8px;
+                      font-size: 13px;
+                    "
+                  >
+                    <option value="1">জানুয়ারি</option>
+                    <option value="2" selected>ফেব্রুয়ারি</option>
+                    <option value="3">মার্চ</option>
+                    <option value="4">এপ্রিল</option>
+                    <option value="5">মে</option>
+                    <option value="6">জুন</option>
+                    <option value="7">জুলাই</option>
+                    <option value="8">আগস্ট</option>
+                    <option value="9">সেপ্টেম্বর</option>
+                    <option value="10">অক্টোবর</option>
+                    <option value="11">নভেম্বর</option>
+                    <option value="12">ডিসেম্বর</option>
+                  </select>
+                  <select
+                    id="yearSelector"
+                    style="
+                      width: 90px;
+                      padding: 8px;
+                      border: 2px solid #e2e8f0;
+                      border-radius: 8px;
+                      font-size: 13px;
+                    "
+                  >
+                    <option value="2026" selected>২০২৬</option>
+                    <option value="2025">২০২৫</option>
+                  </select>
+                  <button
+                    onclick="loadMonthlyReport()"
+                    style="
+                      padding: 8px 16px;
+                      background: #667eea;
+                      color: white;
+                      border: none;
+                      border-radius: 8px;
+                      cursor: pointer;
+                      font-size: 13px;
+                    "
+                  >
+                    <i class="fas fa-search"></i>
+                  </button>
+                </div>
+
+                <div id="monthlyReportContent">
+                  <div class="stats-grid">
+                    <div class="stat-item">
+                      <div class="stat-label">মোট বিক্রয়</div>
+                      <div class="stat-value" id="monthlyTotalSales">০.০০</div>
+                    </div>
+                    <div class="stat-item">
+                      <div class="stat-label">মোট খরচ</div>
+                      <div class="stat-value" id="monthlyTotalExpenses">০.০০</div>
+                    </div>
+                    <div class="stat-item">
+                      <div class="stat-label">নিট মুনাফা</div>
+                      <div class="stat-value" id="monthlyNetProfit">০.০০</div>
+                    </div>
+                    <div class="stat-item">
+                      <div class="stat-label">লেনদেন</div>
+                      <div class="stat-value" id="monthlyTransactions">০</div>
+                    </div>
+                  </div>
+
+                  <div style="margin-top: 15px">
+                    <h3 style="color: #2d3748; font-size: 16px; margin-bottom: 10px">
+                      শীর্ষ ৫ পণ্য
+                    </h3>
+                    <div id="topProductsList">
+                      <p style="color: #718096; text-align: center; padding: 15px; font-size: 13px">
+                        কোনো বিক্রয় নেই
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="report-actions" style="margin-top: 15px">
+                  <button class="btn-report btn-pdf" onclick="generateMonthlyPDF()">
+                    <i class="fas fa-file-pdf"></i> PDF
+                  </button>
+                  <button class="btn-report btn-whatsapp" onclick="shareMonthlyWhatsApp()">
+                    <i class="fab fa-whatsapp"></i> WhatsApp
+                  </button>
+                  <button class="btn-report btn-view" onclick="viewMonthlyReport()">
+                    <i class="fas fa-eye"></i> দেখুন
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Role Based UI Script -->
+    <script>
+      (function () {
+        const userStr = localStorage.getItem("farming_user") || localStorage.getItem("user");
+        if (!userStr) {
+          window.location.href = "index.html";
+          return;
+        }
+
+        const user = JSON.parse(userStr);
+
+        // Check if user has permission to access reports (Owner and Manager only)
+        if (user.role === "cashier") {
+          alert("⚠️ আপনার এই পৃষ্ঠা দেখার অনুমতি নেই!");
+          window.location.href = "sales.html";
+          return;
+        }
+
+        // Update user name and role
+        const userNameEl = document.getElementById("userName");
+        if (userNameEl) userNameEl.textContent = user.full_name || user.username;
+
+        const userRoleEl = document.querySelector(".user-role");
+        if (userRoleEl) {
+          const roleText = user.role === "owner" ? "👑 মালিক" : "🟡 ব্যবস্থাপক";
+          userRoleEl.textContent = roleText;
+        }
+
+        // Role-based menu visibility
+        const menuItems = document.querySelectorAll(".sidebar-nav li");
+
+        // Reset - show all menus
+        menuItems.forEach((item) => {
+          item.style.display = "block";
+        });
+
+        // Cashier should never reach here, but just in case
+        if (user.role === "cashier") {
+          menuItems.forEach((item) => {
+            const link = item.querySelector("a");
+            if (link) {
+              const href = link.getAttribute("href") || "";
+              if (!href.includes("sales.html") && !item.classList.contains("logout")) {
+                item.style.display = "none";
+              }
+            }
+          });
+        }
+
+        // Logout functionality
+        const logoutBtn = document.getElementById("logoutBtn");
+        if (logoutBtn) {
+          logoutBtn.addEventListener("click", function (e) {
+            e.preventDefault();
+            localStorage.removeItem("farming_user");
+            localStorage.removeItem("user");
+            window.location.href = "index.html";
+          });
+        }
+
+        // Mobile menu toggle
+        const menuToggle = document.getElementById("menuToggle");
+        const sidebar = document.getElementById("sidebar");
+
+        if (menuToggle && sidebar) {
+          menuToggle.addEventListener("click", function () {
+            sidebar.classList.toggle("active");
+          });
+        }
+      })();
+    </script>
+
+    <script src="js/reports.js"></script>
+  </body>
+</html>

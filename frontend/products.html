@@ -1,0 +1,607 @@
+<!doctype html>
+<html lang="bn">
+  <head>
+    <!-- PWA Support - Android + iOS -->
+    <link rel="manifest" href="manifest.json" />
+
+    <!-- iOS Specific -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Farming Family" />
+
+    <!-- Android/Chrome -->
+    <meta name="theme-color" content="#764ba2" />
+
+    <!-- iOS Icons (if you want custom icons for iPhone) -->
+    <link rel="apple-touch-icon" href="icons/icon-152x152.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152x152.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-192x192.png" />
+    <link rel="apple-touch-icon" sizes="167x167" href="icons/icon-152x152.png" />
+
+    <!-- iOS Splash Screens (optional) -->
+    <link
+      rel="apple-touch-startup-image"
+      href="icons/splash-640x1136.png"
+      media="(device-width: 320px) and (device-height: 568px)"
+    />
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes"
+    />
+    <title>পণ্য ব্যবস্থাপনা - Farming Family</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+    <style>
+      /* Product Management Specific Styles - ULTRA COMPACT */
+      .products-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px; /* Reduced from 25px */
+        flex-wrap: wrap;
+        gap: 10px; /* Reduced from 15px */
+      }
+
+      .search-box {
+        display: flex;
+        align-items: center;
+        background: white;
+        border-radius: 8px; /* Reduced from 10px */
+        padding: 3px 10px; /* Reduced from 5px 15px */
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03); /* Reduced */
+        flex: 1;
+        max-width: 350px; /* Slightly reduced */
+      }
+
+      .search-box i {
+        color: #667eea;
+        margin-right: 8px; /* Reduced from 10px */
+        font-size: 16px;
+      }
+
+      .search-box input {
+        border: none;
+        padding: 8px 0; /* Reduced from 12px */
+        width: 100%;
+        font-size: 14px; /* Reduced from 16px */
+        outline: none;
+      }
+
+      .btn-add {
+        background: linear-gradient(135deg, #00b09b, #96c93d);
+        color: white;
+        border: none;
+        padding: 8px 18px; /* Reduced from 12px 25px */
+        border-radius: 8px; /* Reduced from 10px */
+        font-size: 14px; /* Reduced from 16px */
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px; /* Reduced from 8px */
+        transition: transform 0.3s;
+      }
+
+      .btn-add:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px rgba(0, 176, 155, 0.2); /* Reduced */
+      }
+
+      .btn-edit {
+        background: #ffc107;
+        color: white;
+        border: none;
+        padding: 4px 8px; /* Reduced from 6px 12px */
+        border-radius: 4px; /* Reduced from 5px */
+        cursor: pointer;
+        margin-right: 4px; /* Reduced from 5px */
+        font-size: 12px; /* Added */
+      }
+
+      .btn-delete {
+        background: #ff6b6b;
+        color: white;
+        border: none;
+        padding: 4px 8px; /* Reduced from 6px 12px */
+        border-radius: 4px; /* Reduced from 5px */
+        cursor: pointer;
+        font-size: 12px; /* Added */
+      }
+
+      .btn-delete:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+      }
+
+      .category-badge {
+        background: #e3f2fd;
+        color: #1976d2;
+        padding: 3px 8px; /* Reduced from 4px 12px */
+        border-radius: 16px; /* Reduced from 20px */
+        font-size: 11px; /* Reduced from 12px */
+        font-weight: 600;
+      }
+
+      .stock-low {
+        color: #ff6b6b;
+        font-weight: 600;
+      }
+
+      .stock-normal {
+        color: #00b09b;
+      }
+
+      /* Modal Styles - ULTRA COMPACT */
+      .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 2000;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .modal.active {
+        display: flex;
+      }
+
+      .modal-content {
+        background: white;
+        padding: 20px; /* Reduced from 30px */
+        border-radius: 12px; /* Reduced from 15px */
+        width: 90%;
+        max-width: 550px; /* Slightly reduced */
+        max-height: 90vh;
+        overflow-y: auto;
+        position: relative;
+      }
+
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px; /* Reduced from 20px */
+      }
+
+      .modal-header h2 {
+        color: #333;
+        font-size: 20px; /* Reduced from 24px */
+      }
+
+      .close-modal {
+        background: none;
+        border: none;
+        font-size: 22px; /* Reduced from 24px */
+        cursor: pointer;
+        color: #666;
+      }
+
+      .form-row {
+        margin-bottom: 12px; /* Reduced from 20px */
+      }
+
+      .form-row label {
+        display: block;
+        margin-bottom: 4px; /* Reduced from 8px */
+        color: #555;
+        font-weight: 500;
+        font-size: 13px; /* Added */
+      }
+
+      .form-row input,
+      .form-row select {
+        width: 100%;
+        padding: 8px 12px; /* Reduced from 12px 15px */
+        border: 2px solid #e0e0e0;
+        border-radius: 6px; /* Reduced from 10px */
+        font-size: 14px; /* Reduced from 16px */
+        transition: border-color 0.3s;
+      }
+
+      .form-row input:focus,
+      .form-row select:focus {
+        outline: none;
+        border-color: #667eea;
+      }
+
+      .form-row-half {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px; /* Reduced from 15px */
+      }
+
+      .btn-save {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 10px; /* Reduced from 14px */
+        border-radius: 8px; /* Reduced from 10px */
+        font-size: 15px; /* Reduced from 16px */
+        font-weight: 600;
+        cursor: pointer;
+        width: 100%;
+        margin-top: 15px; /* Reduced from 20px */
+      }
+
+      .action-buttons {
+        display: flex;
+        gap: 6px; /* Reduced from 8px */
+      }
+
+      /* Loading Spinner */
+      .loading {
+        text-align: center;
+        padding: 30px; /* Reduced from 40px */
+        color: #666;
+      }
+
+      .loading i {
+        font-size: 35px; /* Reduced from 40px */
+        color: #667eea;
+        margin-bottom: 10px; /* Reduced from 15px */
+      }
+
+      /* Table Styles - Compact */
+      .data-table {
+        font-size: 13px; /* Added */
+      }
+
+      .data-table th {
+        padding: 10px; /* Reduced */
+        font-size: 13px;
+      }
+
+      .data-table td {
+        padding: 8px 10px; /* Reduced */
+        font-size: 13px;
+      }
+
+      /* Responsive */
+      @media (max-width: 768px) {
+        .products-header {
+          flex-direction: column;
+          align-items: stretch;
+          gap: 8px;
+        }
+
+        .search-box {
+          max-width: 100%;
+        }
+
+        .form-row-half {
+          grid-template-columns: 1fr;
+          gap: 8px;
+        }
+
+        .btn-add {
+          width: 100%;
+          justify-content: center;
+          padding: 8px !important;
+        }
+
+        .modal-content {
+          padding: 15px !important;
+          width: 95% !important;
+        }
+
+        .data-table th,
+        .data-table td {
+          padding: 6px 8px;
+          font-size: 12px;
+        }
+
+        .btn-edit,
+        .btn-delete {
+          padding: 3px 6px !important;
+          font-size: 11px !important;
+        }
+      }
+
+      /* Extra small devices */
+      @media (max-width: 480px) {
+        .data-table {
+          min-width: 500px;
+        }
+
+        .modal-content {
+          padding: 12px !important;
+        }
+
+        .form-row input,
+        .form-row select {
+          padding: 6px 10px !important;
+          font-size: 13px !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="dashboard-container">
+      <!-- SIDEBAR - LEFT SIDE -->
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+          <div class="shop-logo-small">
+            <i class="fas fa-store"></i>
+          </div>
+          <h2>Farming Family</h2>
+          <p class="user-role" id="userRoleDisplay">লোড হচ্ছে...</p>
+        </div>
+
+        <nav class="sidebar-nav">
+          <ul id="mainMenu">
+            <li>
+              <a href="dashboard.html">
+                <i class="fas fa-home"></i>
+                <span>ড্যাশবোর্ড</span>
+              </a>
+            </li>
+            <li>
+              <a href="sales.html">
+                <i class="fas fa-cash-register"></i>
+                <span>বিক্রয়</span>
+              </a>
+            </li>
+            <li class="active">
+              <a href="products.html">
+                <i class="fas fa-box"></i>
+                <span>পণ্য</span>
+              </a>
+            </li>
+            <li>
+              <a href="expenses.html">
+                <i class="fas fa-arrow-down"></i>
+                <span>খরচ ও ক্রয়</span>
+              </a>
+            </li>
+            <li>
+              <a href="reports.html">
+                <i class="fas fa-chart-bar"></i>
+                <span>রিপোর্ট</span>
+              </a>
+            </li>
+            <li class="logout">
+              <a href="#" id="logoutBtn">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>লগআউট</span>
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </aside>
+
+      <!-- MAIN CONTENT - RIGHT SIDE -->
+      <main class="main-content">
+        <header class="top-bar">
+          <button id="menuToggle" class="menu-toggle">
+            <i class="fas fa-bars"></i>
+          </button>
+          <h1>পণ্য ব্যবস্থাপনা</h1>
+          <div class="user-info">
+            <span id="userName">অতিথি</span>
+            <i class="fas fa-user-circle"></i>
+          </div>
+        </header>
+
+        <div class="content">
+          <!-- Products Header with Search and Add Button -->
+          <div class="products-header">
+            <div class="search-box">
+              <i class="fas fa-search"></i>
+              <input type="text" id="searchProduct" placeholder="পণ্যের নাম লিখুন..." />
+            </div>
+            <button id="addProductBtn" class="btn-add">
+              <i class="fas fa-plus"></i>
+              নতুন পণ্য
+            </button>
+          </div>
+
+          <!-- Products Table -->
+          <div class="recent-sales">
+            <div class="table-responsive">
+              <table class="data-table" id="productsTable">
+                <thead>
+                  <tr>
+                    <th>পণ্যের নাম</th>
+                    <th>ক্যাটাগরি</th>
+                    <th>বিক্রয় মূল্য</th>
+                    <th>স্টক</th>
+                    <th>ইউনিট</th>
+                    <th>স্ট্যাটাস</th>
+                    <th>অ্যাকশন</th>
+                  </tr>
+                </thead>
+                <tbody id="productsList">
+                  <tr>
+                    <td colspan="7" class="text-center loading">
+                      <i class="fas fa-spinner fa-spin"></i>
+                      <p>পণ্যের তালিকা লোড হচ্ছে...</p>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Add/Edit Product Modal -->
+    <div id="productModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 id="modalTitle">নতুন পণ্য যোগ করুন</h2>
+          <button class="close-modal" id="closeModal">&times;</button>
+        </div>
+
+        <form id="productForm">
+          <input type="hidden" id="productId" />
+
+          <div class="form-row">
+            <label for="productName">পণ্যের নাম (বাংলা)</label>
+            <input type="text" id="productName" required placeholder="যেমন: সাদা ডিম" />
+          </div>
+
+          <div class="form-row">
+            <label for="productNameEn">পণ্যের নাম (ইংরেজি)</label>
+            <input type="text" id="productNameEn" placeholder="যেমন: White Egg" />
+          </div>
+
+          <div class="form-row">
+            <label for="category">ক্যাটাগরি</label>
+            <select id="category" required>
+              <option value="">-- নির্বাচন করুন --</option>
+              <option value="ডিম">ডিম</option>
+              <option value="প্রাণী খাদ্য">প্রাণী খাদ্য</option>
+              <option value="প্রাণী ওষুধ">প্রাণী ওষুধ</option>
+              <option value="কৃষি যন্ত্রপাতি">কৃষি যন্ত্রপাতি</option>
+              <option value="পাখি ও বাচ্চা">পাখি ও বাচ্চা</option>
+            </select>
+          </div>
+
+          <div class="form-row-half">
+            <div>
+              <label for="sellingPrice">বিক্রয় মূল্য (টাকা)</label>
+              <input
+                type="number"
+                id="sellingPrice"
+                step="0.05"
+                min="0"
+                required
+                placeholder="০.০০"
+              />
+            </div>
+            <div>
+              <label for="purchasePrice">ক্রয় মূল্য (টাকা)</label>
+              <input type="number" id="purchasePrice" step="0.05" min="0" placeholder="০.০০" />
+            </div>
+          </div>
+
+          <div class="form-row-half">
+            <div>
+              <label for="currentStock">বর্তমান স্টক</label>
+              <input type="number" id="currentStock" step="0.05" min="0" value="0.00" />
+            </div>
+            <div>
+              <label for="minStock">নূন্যতম স্টক</label>
+              <input type="number" id="minStock" step="0.05" min="0" value="10.00" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <label for="unitType">ইউনিট প্রকার</label>
+            <select id="unitType" required>
+              <option value="piece">পিস</option>
+              <option value="weight">ওজন (কেজি)</option>
+              <option value="both">উভয় (পিস + কেজি)</option>
+            </select>
+          </div>
+
+          <div class="form-row" id="avgWeightRow" style="display: none">
+            <label for="avgWeight">গড় ওজন (কেজি/পিস) - শুধু লাইভস্টকের জন্য</label>
+            <input type="number" id="avgWeight" step="0.05" min="0" placeholder="১.৫০" />
+          </div>
+
+          <button type="submit" class="btn-save">
+            <i class="fas fa-save"></i>
+            সংরক্ষণ করুন
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Role Based UI Script -->
+    <script>
+      (function () {
+        const userStr = localStorage.getItem("farming_user") || localStorage.getItem("user");
+        if (!userStr) {
+          window.location.href = "index.html";
+          return;
+        }
+
+        const user = JSON.parse(userStr);
+
+        // Update user name and role
+        const userNameEl = document.getElementById("userName");
+        if (userNameEl) userNameEl.textContent = user.full_name || user.username;
+
+        const userRoleEl = document.querySelector(".user-role");
+        if (userRoleEl) {
+          const roleText =
+            user.role === "owner"
+              ? "👑 মালিক"
+              : user.role === "manager"
+                ? "🟡 ব্যবস্থাপক"
+                : "🔵 ক্যাশিয়ার";
+          userRoleEl.textContent = roleText;
+        }
+
+        // Role-based menu visibility
+        const menuItems = document.querySelectorAll(".sidebar-nav li");
+
+        // Reset - show all menus
+        menuItems.forEach((item) => {
+          item.style.display = "block";
+        });
+
+        // Cashier: Hide everything except Sales and Logout
+        if (user.role === "cashier") {
+          menuItems.forEach((item) => {
+            const link = item.querySelector("a");
+            if (link) {
+              const href = link.getAttribute("href") || "";
+              const text = link.textContent || "";
+              if (!href.includes("sales.html") && !item.classList.contains("logout")) {
+                item.style.display = "none";
+              }
+            }
+          });
+
+          // Also hide add product button
+          const addProductBtn = document.getElementById("addProductBtn");
+          if (addProductBtn) {
+            addProductBtn.style.display = "none";
+          }
+        }
+
+        // Check if user can manage products (Owner and Manager only)
+        if (user.role !== "owner" && user.role !== "manager") {
+          const addProductBtn = document.getElementById("addProductBtn");
+          if (addProductBtn) {
+            addProductBtn.style.display = "none";
+          }
+        }
+
+        // Logout functionality
+        const logoutBtn = document.getElementById("logoutBtn");
+        if (logoutBtn) {
+          logoutBtn.addEventListener("click", function (e) {
+            e.preventDefault();
+            localStorage.removeItem("farming_user");
+            localStorage.removeItem("user");
+            window.location.href = "index.html";
+          });
+        }
+
+        // Mobile menu toggle
+        const menuToggle = document.getElementById("menuToggle");
+        const sidebar = document.getElementById("sidebar");
+
+        if (menuToggle && sidebar) {
+          menuToggle.addEventListener("click", function () {
+            sidebar.classList.toggle("active");
+          });
+        }
+      })();
+    </script>
+
+    <script src="js/products.js"></script>
+  </body>
+</html>

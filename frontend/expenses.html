@@ -1,0 +1,782 @@
+<!doctype html>
+<html lang="bn">
+  <head>
+    <!-- PWA Support - Android + iOS -->
+    <link rel="manifest" href="manifest.json" />
+
+    <!-- iOS Specific -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Farming Family" />
+
+    <!-- Android/Chrome -->
+    <meta name="theme-color" content="#764ba2" />
+
+    <!-- iOS Icons (if you want custom icons for iPhone) -->
+    <link rel="apple-touch-icon" href="icons/icon-152x152.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152x152.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-192x192.png" />
+    <link rel="apple-touch-icon" sizes="167x167" href="icons/icon-152x152.png" />
+
+    <!-- iOS Splash Screens (optional) -->
+    <link
+      rel="apple-touch-startup-image"
+      href="icons/splash-640x1136.png"
+      media="(device-width: 320px) and (device-height: 568px)"
+    />
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes"
+    />
+    <title>খরচ ও ক্রয় - Farming Family</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+    <style>
+      /* ========== EXPENSE PAGE - ULTRA COMPACT ========== */
+
+      .expense-dashboard {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px; /* Reduced from 30px */
+      }
+
+      /* Section Cards */
+      .section-card {
+        background: white;
+        border-radius: 16px; /* Reduced from 20px */
+        padding: 18px; /* Reduced from 25px */
+        margin-bottom: 20px; /* Reduced from 30px */
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05); /* Reduced */
+      }
+
+      .section-header {
+        display: flex;
+        align-items: center;
+        gap: 12px; /* Reduced from 15px */
+        margin-bottom: 15px; /* Reduced from 25px */
+        padding-bottom: 10px; /* Reduced from 15px */
+        border-bottom: 2px solid #f0f2f5;
+      }
+
+      .section-header i {
+        width: 36px; /* Reduced from 45px */
+        height: 36px; /* Reduced from 45px */
+        background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+        border-radius: 10px; /* Reduced from 12px */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px; /* Reduced from 24px */
+        color: #667eea;
+      }
+
+      .section-header h2 {
+        color: #2d3748;
+        font-size: 18px; /* Reduced from 22px */
+        font-weight: 600;
+        margin: 0;
+      }
+
+      .section-header p {
+        color: #718096;
+        font-size: 12px; /* Reduced from 14px */
+        margin: 3px 0 0 0; /* Reduced */
+      }
+
+      /* Form Grid */
+      .form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px; /* Reduced from 20px */
+      }
+
+      .form-group {
+        margin-bottom: 0;
+      }
+
+      .form-group label {
+        display: block;
+        margin-bottom: 4px; /* Reduced from 8px */
+        color: #4a5568;
+        font-weight: 500;
+        font-size: 12px; /* Reduced from 14px */
+      }
+
+      .form-group label i {
+        margin-right: 5px; /* Reduced from 8px */
+        color: #667eea;
+        font-size: 12px; /* Reduced from 14px */
+      }
+
+      .form-group input,
+      .form-group select,
+      .form-group textarea {
+        width: 100%;
+        padding: 8px 12px; /* Reduced from 12px 16px */
+        border: 2px solid #e2e8f0;
+        border-radius: 8px; /* Reduced from 12px */
+        font-size: 14px; /* Reduced from 16px */
+        transition: all 0.3s;
+        background: white;
+      }
+
+      /* Number inputs */
+      .form-group input[type="number"] {
+        -moz-appearance: textfield;
+        appearance: textfield;
+        font-weight: 600;
+        color: #2d3748;
+        letter-spacing: 0.5px;
+      }
+
+      .form-group input[type="number"]:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1); /* Reduced from 3px */
+      }
+
+      .form-group input[type="number"]::-webkit-inner-spin-button,
+      .form-group input[type="number"]::-webkit-outer-spin-button {
+        opacity: 1;
+        height: 20px; /* Reduced from 28px */
+        width: 16px; /* Reduced from 20px */
+        cursor: pointer;
+      }
+
+      /* Full width items */
+      .full-width {
+        grid-column: span 2;
+      }
+
+      /* Stock info badge */
+      .stock-badge {
+        background: #f7fafc;
+        border-radius: 8px; /* Reduced from 12px */
+        padding: 10px 15px; /* Reduced from 15px 20px */
+        margin-bottom: 15px; /* Reduced from 20px */
+        display: flex;
+        align-items: center;
+        gap: 10px; /* Reduced from 15px */
+        border-left: 4px solid #667eea; /* Reduced from 5px */
+        font-size: 13px; /* Reduced from 15px */
+        color: #2d3748;
+      }
+
+      .stock-badge i {
+        color: #667eea;
+        font-size: 18px; /* Reduced from 20px */
+      }
+
+      /* Total display */
+      .total-display {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 8px; /* Reduced from 12px */
+        padding: 12px 15px; /* Reduced from 20px */
+        margin: 15px 0; /* Reduced from 20px */
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        color: white;
+      }
+
+      .total-label {
+        font-size: 14px; /* Reduced from 16px */
+        font-weight: 500;
+        opacity: 0.95;
+      }
+
+      .total-amount {
+        font-size: 20px; /* Reduced from 28px */
+        font-weight: 700;
+      }
+
+      /* Action buttons */
+      .action-btn {
+        width: 100%;
+        padding: 10px; /* Reduced from 16px */
+        border: none;
+        border-radius: 8px; /* Reduced from 12px */
+        font-size: 14px; /* Reduced from 16px */
+        font-weight: 600;
+        color: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px; /* Reduced from 10px */
+        transition: all 0.3s;
+        margin-top: 8px; /* Reduced from 10px */
+      }
+
+      .action-btn i {
+        font-size: 16px; /* Reduced from 18px */
+      }
+
+      .action-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1); /* Reduced */
+      }
+
+      .btn-purchase {
+        background: linear-gradient(135deg, #00b09b, #96c93d);
+      }
+
+      .btn-damage {
+        background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+      }
+
+      .btn-expense {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+      }
+
+      /* Recent transactions */
+      .recent-section {
+        background: white;
+        border-radius: 16px; /* Reduced from 20px */
+        padding: 18px; /* Reduced from 25px */
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05); /* Reduced */
+      }
+
+      .recent-header {
+        display: flex;
+        align-items: center;
+        gap: 10px; /* Reduced from 12px */
+        margin-bottom: 15px; /* Reduced from 20px */
+        padding-bottom: 10px; /* Reduced from 15px */
+        border-bottom: 2px solid #f0f2f5;
+      }
+
+      .recent-header i {
+        font-size: 20px; /* Reduced from 24px */
+        color: #667eea;
+      }
+
+      .recent-header h3 {
+        color: #2d3748;
+        font-size: 18px; /* Reduced from 20px */
+        font-weight: 600;
+        margin: 0;
+      }
+
+      .transaction-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px; /* Reduced from 12px */
+      }
+
+      .transaction-item {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr 1.5fr;
+        gap: 10px; /* Reduced from 15px */
+        padding: 10px; /* Reduced from 15px */
+        background: #f8fafc;
+        border-radius: 8px; /* Reduced from 12px */
+        align-items: center;
+        font-size: 13px; /* Added */
+      }
+
+      .badge {
+        padding: 4px 10px; /* Reduced from 6px 14px */
+        border-radius: 16px; /* Reduced from 20px */
+        font-size: 11px; /* Reduced from 12px */
+        font-weight: 600;
+        display: inline-block;
+        text-align: center;
+      }
+
+      .badge-purchase {
+        background: #00b09b15;
+        color: #00b09b;
+      }
+
+      .badge-expense {
+        background: #667eea15;
+        color: #667eea;
+      }
+
+      .badge-damage {
+        background: #ff6b6b15;
+        color: #ff6b6b;
+      }
+
+      .amount {
+        font-weight: 700;
+        color: #2d3748;
+      }
+
+      /* Mobile menu toggle */
+      .menu-toggle {
+        display: none;
+        background: none;
+        border: none;
+        font-size: 22px; /* Reduced from 24px */
+        color: #666;
+        cursor: pointer;
+      }
+
+      /* Responsive */
+      @media (max-width: 1200px) {
+        .expense-dashboard {
+          grid-template-columns: 1fr;
+          gap: 15px; /* Reduced from 20px */
+        }
+
+        .form-grid {
+          grid-template-columns: 1fr;
+          gap: 12px; /* Added */
+        }
+
+        .full-width {
+          grid-column: span 1;
+        }
+
+        .transaction-item {
+          grid-template-columns: 1fr;
+          gap: 8px; /* Reduced from 10px */
+        }
+
+        .menu-toggle {
+          display: block;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .section-card {
+          padding: 15px; /* Further reduced */
+          margin-bottom: 15px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+          padding: 6px 10px;
+          font-size: 13px;
+        }
+
+        .action-btn {
+          padding: 8px;
+          font-size: 13px;
+        }
+
+        .total-amount {
+          font-size: 18px;
+        }
+      }
+
+      /* Empty state */
+      .empty-state {
+        text-align: center;
+        padding: 30px; /* Reduced from 40px */
+        color: #a0aec0;
+      }
+
+      .empty-state i {
+        font-size: 40px; /* Reduced from 48px */
+        margin-bottom: 10px; /* Reduced from 15px */
+      }
+    </style>
+  </head>
+  <body>
+    <div class="dashboard-container">
+      <!-- SIDEBAR - LEFT SIDE -->
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+          <div class="shop-logo-small">
+            <i class="fas fa-store"></i>
+          </div>
+          <h2>Farming Family</h2>
+          <p class="user-role" id="userRoleDisplay">লোড হচ্ছে...</p>
+        </div>
+
+        <nav class="sidebar-nav">
+          <ul id="mainMenu">
+            <li>
+              <a href="dashboard.html">
+                <i class="fas fa-home"></i>
+                <span>ড্যাশবোর্ড</span>
+              </a>
+            </li>
+            <li>
+              <a href="sales.html">
+                <i class="fas fa-cash-register"></i>
+                <span>বিক্রয়</span>
+              </a>
+            </li>
+            <li>
+              <a href="products.html">
+                <i class="fas fa-box"></i>
+                <span>পণ্য</span>
+              </a>
+            </li>
+            <li class="active">
+              <a href="expenses.html">
+                <i class="fas fa-arrow-down"></i>
+                <span>খরচ ও ক্রয়</span>
+              </a>
+            </li>
+            <li>
+              <a href="reports.html">
+                <i class="fas fa-chart-bar"></i>
+                <span>রিপোর্ট</span>
+              </a>
+            </li>
+            <li class="logout">
+              <a href="#" id="logoutBtn">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>লগআউট</span>
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </aside>
+
+      <!-- MAIN CONTENT - RIGHT SIDE -->
+      <main class="main-content">
+        <header class="top-bar">
+          <button id="menuToggle" class="menu-toggle">
+            <i class="fas fa-bars"></i>
+          </button>
+          <h1>খরচ ও ক্রয়</h1>
+          <div class="user-info">
+            <span id="userName">অতিথি</span>
+            <i class="fas fa-user-circle"></i>
+          </div>
+        </header>
+
+        <div class="content">
+          <div class="expense-dashboard">
+            <!-- LEFT COLUMN -->
+            <div>
+              <!-- Product Purchase Section -->
+              <div class="section-card">
+                <div class="section-header">
+                  <i class="fas fa-cart-plus"></i>
+                  <div>
+                    <h2>পণ্য ক্রয়</h2>
+                    <p>নতুন পণ্য ক্রয় করে স্টক বৃদ্ধি করুন</p>
+                  </div>
+                </div>
+
+                <div id="purchaseStockInfo" class="stock-badge" style="display: none">
+                  <i class="fas fa-info-circle"></i>
+                  <span id="purchaseStockText"></span>
+                </div>
+
+                <div class="form-grid">
+                  <div class="form-group full-width">
+                    <label><i class="fas fa-box"></i> পণ্য নির্বাচন করুন</label>
+                    <select id="purchaseProductId" onchange="loadPurchaseProductInfo()">
+                      <option value="">-- পণ্য নির্বাচন করুন --</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label><i class="fas fa-weight"></i> পরিমাণ</label>
+                    <input
+                      type="number"
+                      id="purchaseQuantity"
+                      step="0.05"
+                      min="0.05"
+                      value="1.00"
+                      placeholder="১.০০"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label><i class="fas fa-balance-scale"></i> ইউনিট</label>
+                    <select id="purchaseUnit">
+                      <option value="pc">পিস</option>
+                      <option value="kg">কেজি</option>
+                      <option value="cage">কেজ (৩০ পিস)</option>
+                      <option value="হালি">হালি (৪ পিস)</option>
+                      <option value="ডজন">ডজন (১২ পিস)</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label><i class="fas fa-tag"></i> ক্রয় মূল্য (প্রতি ইউনিট)</label>
+                    <input
+                      type="number"
+                      id="purchaseRate"
+                      step="0.05"
+                      min="0.05"
+                      placeholder="০.০০"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label><i class="fas fa-percent"></i> ছাড়</label>
+                    <input
+                      type="number"
+                      id="purchaseDiscount"
+                      step="0.05"
+                      min="0"
+                      value="0.00"
+                      placeholder="০.০০"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label><i class="fas fa-truck"></i> সরবরাহকারী</label>
+                    <input type="text" id="purchaseSupplier" placeholder="ঐচ্ছিক" />
+                  </div>
+
+                  <div class="form-group full-width">
+                    <label><i class="fas fa-sticky-note"></i> মন্তব্য</label>
+                    <textarea id="purchaseNotes" rows="2" placeholder="ঐচ্ছিক"></textarea>
+                  </div>
+                </div>
+
+                <div class="total-display">
+                  <span class="total-label"><i class="fas fa-calculator"></i> মোট খরচ:</span>
+                  <span class="total-amount" id="purchaseTotal">০.০০</span>
+                </div>
+
+                <button
+                  id="savePurchaseBtn"
+                  class="action-btn btn-purchase"
+                  onclick="savePurchase()"
+                >
+                  <i class="fas fa-save"></i> ক্রয় সংরক্ষণ করুন
+                </button>
+              </div>
+
+              <!-- Damage/Death Entry Section -->
+              <div class="section-card">
+                <div class="section-header">
+                  <i class="fas fa-exclamation-triangle"></i>
+                  <div>
+                    <h2>ক্ষতি / মৃত্যু / ওজন পরিবর্তন</h2>
+                    <p>স্টক থেকে ক্ষতি, মৃত্যু বা ওজন পরিবর্তন রেকর্ড করুন</p>
+                  </div>
+                </div>
+
+                <div id="damageStockInfo" class="stock-badge" style="display: none">
+                  <i class="fas fa-info-circle"></i>
+                  <span id="damageStockText"></span>
+                </div>
+
+                <div class="form-grid">
+                  <div class="form-group full-width">
+                    <label><i class="fas fa-box"></i> পণ্য নির্বাচন করুন</label>
+                    <select id="damageProductId" onchange="loadDamageProductInfo()">
+                      <option value="">-- পণ্য নির্বাচন করুন --</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label><i class="fas fa-tag"></i> ধরন</label>
+                    <select id="damageType">
+                      <option value="damage">ক্ষতি (পচা/ভাঙ্গা)</option>
+                      <option value="death">মৃত্যু (লাইভস্টক)</option>
+                      <option value="weight_loss">ওজন কমেছে</option>
+                      <option value="weight_gain">ওজন বেড়েছে</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label><i class="fas fa-list"></i> কারণ</label>
+                    <select id="damageReason">
+                      <option value="spoiled">পচে গেছে</option>
+                      <option value="broken">ভেঙে গেছে</option>
+                      <option value="disease">রোগ</option>
+                      <option value="accident">দুর্ঘটনা</option>
+                      <option value="other">অন্যান্য</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label><i class="fas fa-weight"></i> পরিমাণ পরিবর্তন</label>
+                    <input
+                      type="number"
+                      id="damageQuantity"
+                      step="0.05"
+                      min="0"
+                      value="0.00"
+                      placeholder="০.০০"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label><i class="fas fa-balance-scale"></i> ইউনিট</label>
+                    <select id="damageUnit">
+                      <option value="pc">পিস</option>
+                      <option value="kg">কেজি</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label><i class="fas fa-weight-hanging"></i> ওজন পরিবর্তন (কেজি)</label>
+                    <input
+                      type="number"
+                      id="damageWeight"
+                      step="0.05"
+                      min="0"
+                      value="0.00"
+                      placeholder="০.০০"
+                    />
+                  </div>
+
+                  <div class="form-group full-width">
+                    <label><i class="fas fa-sticky-note"></i> মন্তব্য</label>
+                    <textarea
+                      id="damageNotes"
+                      rows="2"
+                      placeholder="বিস্তারিত কারণ লিখুন"
+                    ></textarea>
+                  </div>
+                </div>
+
+                <button id="saveDamageBtn" class="action-btn btn-damage" onclick="saveDamage()">
+                  <i class="fas fa-save"></i> সংরক্ষণ করুন
+                </button>
+              </div>
+            </div>
+
+            <!-- RIGHT COLUMN -->
+            <div>
+              <!-- Shop Expenses Section -->
+              <div class="section-card">
+                <div class="section-header">
+                  <i class="fas fa-money-bill-wave"></i>
+                  <div>
+                    <h2>দোকানের খরচ</h2>
+                    <p>ভাড়া, বিদ্যুৎ, বেতন ও অন্যান্য খরচ</p>
+                  </div>
+                </div>
+
+                <div class="form-grid">
+                  <div class="form-group full-width">
+                    <label><i class="fas fa-list-alt"></i> খরচের ধরণ</label>
+                    <select id="expenseCategory">
+                      <option value="ভাড়া">ভাড়া</option>
+                      <option value="বিদ্যুৎ বিল">বিদ্যুৎ বিল</option>
+                      <option value="বেতন">বেতন</option>
+                      <option value="প্যাকেজিং">প্যাকেজিং</option>
+                      <option value="পরিবহন">পরিবহন</option>
+                      <option value="মেরামতি">মেরামতি</option>
+                      <option value="অন্যান্য">অন্যান্য</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label><i class="fas fa-coins"></i> পরিমাণ (টাকা)</label>
+                    <input
+                      type="number"
+                      id="expenseAmount"
+                      step="0.05"
+                      min="0.05"
+                      placeholder="০.০০"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label><i class="fas fa-align-left"></i> বিবরণ</label>
+                    <input type="text" id="expenseDescription" placeholder="খরচের বিবরণ" />
+                  </div>
+                </div>
+
+                <button id="saveExpenseBtn" class="action-btn btn-expense" onclick="saveExpense()">
+                  <i class="fas fa-save"></i> খরচ সংরক্ষণ করুন
+                </button>
+              </div>
+
+              <!-- Recent Transactions -->
+              <div class="recent-section">
+                <div class="recent-header">
+                  <i class="fas fa-history"></i>
+                  <h3>সাম্প্রতিক লেনদেন</h3>
+                </div>
+
+                <div id="recentExpensesList" class="transaction-list">
+                  <!-- Dynamic content will be loaded here -->
+                  <div class="empty-state">
+                    <i class="fas fa-receipt"></i>
+                    <p>কোনো লেনদেন পাওয়া যায়নি</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Role Based UI Script -->
+    <script>
+      (function () {
+        const userStr = localStorage.getItem("farming_user") || localStorage.getItem("user");
+        if (!userStr) {
+          window.location.href = "index.html";
+          return;
+        }
+
+        const user = JSON.parse(userStr);
+
+        // Check if user has permission to access expenses (Owner and Manager only)
+        if (user.role === "cashier") {
+          alert("⚠️ আপনার এই পৃষ্ঠা দেখার অনুমতি নেই!");
+          window.location.href = "sales.html";
+          return;
+        }
+
+        // Update user name and role
+        const userNameEl = document.getElementById("userName");
+        if (userNameEl) userNameEl.textContent = user.full_name || user.username;
+
+        const userRoleEl = document.querySelector(".user-role");
+        if (userRoleEl) {
+          const roleText = user.role === "owner" ? "👑 মালিক" : "🟡 ব্যবস্থাপক";
+          userRoleEl.textContent = roleText;
+        }
+
+        // Role-based menu visibility
+        const menuItems = document.querySelectorAll(".sidebar-nav li");
+
+        // Reset - show all menus
+        menuItems.forEach((item) => {
+          item.style.display = "block";
+        });
+
+        // Cashier should never reach here, but just in case
+        if (user.role === "cashier") {
+          menuItems.forEach((item) => {
+            const link = item.querySelector("a");
+            if (link) {
+              const href = link.getAttribute("href") || "";
+              if (!href.includes("sales.html") && !item.classList.contains("logout")) {
+                item.style.display = "none";
+              }
+            }
+          });
+        }
+
+        // Logout functionality
+        const logoutBtn = document.getElementById("logoutBtn");
+        if (logoutBtn) {
+          logoutBtn.addEventListener("click", function (e) {
+            e.preventDefault();
+            localStorage.removeItem("farming_user");
+            localStorage.removeItem("user");
+            window.location.href = "index.html";
+          });
+        }
+
+        // Mobile menu toggle
+        const menuToggle = document.getElementById("menuToggle");
+        const sidebar = document.getElementById("sidebar");
+
+        if (menuToggle && sidebar) {
+          menuToggle.addEventListener("click", function () {
+            sidebar.classList.toggle("active");
+          });
+        }
+      })();
+    </script>
+
+    <script src="js/expenses.js"></script>
+  </body>
+</html>

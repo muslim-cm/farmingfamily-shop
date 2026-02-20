@@ -1,0 +1,847 @@
+<!doctype html>
+<html lang="bn">
+  <head>
+    <!-- PWA Support - Android + iOS -->
+    <link rel="manifest" href="manifest.json" />
+
+    <!-- iOS Specific -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Farming Family" />
+
+    <!-- Android/Chrome -->
+    <meta name="theme-color" content="#764ba2" />
+
+    <!-- iOS Icons -->
+    <link rel="apple-touch-icon" href="icons/icon-152x152.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152x152.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-192x192.png" />
+    <link rel="apple-touch-icon" sizes="167x167" href="icons/icon-152x152.png" />
+
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes"
+    />
+    <title>বিক্রয় - Farming Family</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+
+    <style>
+      /* ===== SALES PAGE - MOBILE OPTIMIZED ===== */
+      /* ULTRA COMPACT VERSION - 50% REDUCED HEIGHT */
+
+      /* Main container */
+      .sales-container {
+        display: grid;
+        grid-template-columns: 1.5fr 1fr;
+        gap: 15px; /* Reduced from 25px */
+      }
+
+      /* Customer section */
+      .customer-section {
+        background: white;
+        border-radius: 12px; /* Reduced from 15px */
+        padding: 12px; /* Reduced from 20px */
+        margin-bottom: 12px; /* Reduced from 20px */
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.03); /* Reduced */
+      }
+
+      .customer-fields {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px; /* Reduced from 15px */
+        margin-top: 10px; /* Reduced from 15px */
+      }
+
+      .customer-fields input {
+        width: 100%;
+        padding: 8px; /* Reduced from 12px */
+        border: 2px solid #e0e0e0;
+        border-radius: 6px; /* Reduced from 10px */
+        font-size: 14px; /* Reduced from 16px */
+      }
+
+      /* Product search section */
+      .product-search-section {
+        background: white;
+        border-radius: 12px; /* Reduced from 15px */
+        padding: 12px; /* Reduced from 20px */
+        margin-bottom: 12px; /* Reduced from 20px */
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.03); /* Reduced */
+      }
+
+      .search-header {
+        display: flex;
+        gap: 8px; /* Reduced from 10px */
+        margin-bottom: 12px; /* Reduced from 20px */
+      }
+
+      #productSearch {
+        flex: 1;
+        padding: 8px; /* Reduced from 12px */
+        border: 2px solid #e0e0e0;
+        border-radius: 6px; /* Reduced from 10px */
+        font-size: 14px; /* Reduced from 16px */
+      }
+
+      #categoryFilter {
+        padding: 8px; /* Reduced from 12px */
+        border: 2px solid #e0e0e0;
+        border-radius: 6px; /* Reduced from 10px */
+        background: white;
+        font-size: 14px; /* Reduced from 16px */
+      }
+
+      /* Product results container */
+      #productSearchResults {
+        max-height: 350px; /* Slightly reduced */
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      /* Product rows - desktop version */
+      .product-row {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1.2fr 1fr 0.8fr 1fr 0.8fr;
+        gap: 6px; /* Reduced from 10px */
+        align-items: center;
+        margin-bottom: 6px; /* Reduced from 10px */
+        background: #f8f9fa;
+        padding: 10px; /* Reduced from 15px */
+        border-radius: 8px; /* Reduced from 10px */
+      }
+
+      .product-row-header {
+        background: #667eea;
+        color: white;
+        padding: 8px 12px; /* Reduced from 12px 15px */
+        border-radius: 8px; /* Reduced from 10px */
+        font-weight: 600;
+        margin-bottom: 8px; /* Reduced from 10px */
+        display: grid;
+        grid-template-columns: 2fr 1fr 1.2fr 1fr 0.8fr 1fr 0.8fr;
+        gap: 6px; /* Reduced from 10px */
+        font-size: 13px; /* Added */
+      }
+
+      /* Cart section */
+      .cart-section {
+        background: white;
+        border-radius: 12px; /* Reduced from 15px */
+        padding: 12px; /* Reduced from 20px */
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.03); /* Reduced */
+        position: sticky;
+        top: 15px; /* Reduced from 20px */
+      }
+
+      .cart-item {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr 1.2fr 0.8fr 0.5fr;
+        gap: 6px; /* Reduced from 10px */
+        padding: 6px 0; /* Reduced from 10px */
+        border-bottom: 1px solid #eef2f7;
+        align-items: center;
+        font-size: 13px; /* Added */
+      }
+
+      .cart-total {
+        margin-top: 12px; /* Reduced from 20px */
+        padding-top: 12px; /* Reduced from 20px */
+        border-top: 2px solid #eef2f7;
+      }
+
+      .total-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 6px; /* Reduced from 10px */
+        font-size: 14px; /* Reduced from 16px */
+      }
+
+      .grand-total {
+        font-size: 18px; /* Reduced from 24px */
+        font-weight: 700;
+        color: #667eea;
+        margin-top: 10px; /* Reduced from 15px */
+        padding-top: 10px; /* Reduced from 15px */
+        border-top: 2px dashed #eef2f7;
+      }
+
+      .payment-section {
+        background: white;
+        border-radius: 12px; /* Reduced from 15px */
+        padding: 12px; /* Reduced from 20px */
+        margin-top: 12px; /* Reduced from 20px */
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.03); /* Reduced */
+      }
+
+      .btn-remove {
+        background: #ff6b6b;
+        color: white;
+        border: none;
+        width: 28px; /* Reduced from 30px */
+        height: 28px; /* Reduced from 30px */
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px; /* Added */
+      }
+
+      .btn-save-sale {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 10px; /* Reduced from 15px */
+        border-radius: 8px; /* Reduced from 10px */
+        font-size: 15px; /* Reduced from 18px */
+        font-weight: 600;
+        cursor: pointer;
+        width: 100%;
+        margin-top: 12px; /* Reduced from 20px */
+      }
+
+      .stock-low {
+        color: #ff6b6b;
+      }
+
+      .unit-select {
+        padding: 6px; /* Reduced from 8px */
+        border: 2px solid #e0e0e0;
+        border-radius: 4px; /* Reduced from 5px */
+        background: white;
+        width: 100%;
+        font-size: 13px; /* Added */
+      }
+
+      .quantity-input {
+        padding: 6px; /* Reduced from 8px */
+        border: 2px solid #e0e0e0;
+        border-radius: 4px; /* Reduced from 5px */
+        width: 100%;
+        font-size: 13px; /* Added */
+      }
+
+      /* ===== MOBILE OPTIMIZATION - CRITICAL FIX ===== */
+      @media (max-width: 768px) {
+        /* Stack columns */
+        .sales-container {
+          grid-template-columns: 1fr !important;
+          gap: 10px; /* Reduced from 15px */
+        }
+
+        /* Hide desktop headers */
+        .product-row-header {
+          display: none !important;
+        }
+
+        /* Convert product rows to cards */
+        .product-row {
+          display: block !important;
+          padding: 12px !important; /* Reduced from 15px */
+          margin-bottom: 10px !important; /* Reduced from 15px */
+          background: #f8f9fa !important;
+          border-radius: 10px !important; /* Reduced from 12px */
+          border: 1px solid #eef2f7 !important;
+        }
+
+        .product-row > div {
+          display: flex !important;
+          justify-content: space-between !important;
+          align-items: center !important;
+          margin-bottom: 6px !important; /* Reduced from 10px */
+          padding-bottom: 6px !important; /* Reduced from 10px */
+          border-bottom: 1px dashed #eef2f7 !important;
+          font-size: 13px !important; /* Added */
+        }
+
+        .product-row > div:last-child {
+          margin-bottom: 0 !important;
+          padding-bottom: 0 !important;
+          border-bottom: none !important;
+        }
+
+        .product-row > div::before {
+          content: attr(data-label) !important;
+          font-weight: 600 !important;
+          color: #667eea !important;
+          font-size: 13px !important; /* Reduced from 14px */
+          margin-right: 8px !important; /* Reduced from 10px */
+          min-width: 80px !important; /* Reduced from 90px */
+        }
+
+        /* Fix inputs in product rows */
+        .product-row input,
+        .product-row select {
+          width: 100px !important; /* Reduced from 120px */
+          margin-left: 8px !important; /* Reduced from 10px */
+          padding: 6px !important; /* Added */
+          font-size: 13px !important; /* Added */
+        }
+
+        /* Convert cart items to cards */
+        .cart-item {
+          display: block !important;
+          padding: 12px !important; /* Reduced from 15px */
+          margin-bottom: 8px !important; /* Reduced from 10px */
+          background: #f8f9fa !important;
+          border-radius: 10px !important; /* Reduced from 12px */
+          border: 1px solid #eef2f7 !important;
+        }
+
+        .cart-item > div {
+          display: flex !important;
+          justify-content: space-between !important;
+          align-items: center !important;
+          margin-bottom: 6px !important; /* Reduced from 8px */
+          font-size: 13px !important; /* Added */
+        }
+
+        .cart-item > div::before {
+          content: attr(data-label) !important;
+          font-weight: 600 !important;
+          color: #ff6b6b !important;
+          font-size: 12px !important; /* Reduced from 13px */
+          margin-right: 8px !important; /* Reduced from 10px */
+          min-width: 70px !important; /* Reduced from 80px */
+        }
+
+        /* Fix cart item inputs */
+        .cart-item input {
+          width: 70px !important; /* Reduced from 80px */
+          margin-left: 8px !important; /* Reduced from 10px */
+          padding: 5px !important; /* Added */
+          font-size: 13px !important; /* Added */
+        }
+
+        .cart-item .btn-remove {
+          width: 36px !important; /* Reduced from 44px */
+          height: 36px !important; /* Reduced from 44px */
+          font-size: 16px !important; /* Reduced from 18px */
+        }
+
+        /* Stack search header */
+        .search-header {
+          flex-direction: column !important;
+          gap: 6px !important; /* Added */
+        }
+
+        /* Fix discount input */
+        .total-row input {
+          width: 80px !important; /* Reduced from 100px */
+          padding: 6px !important; /* Reduced from 10px */
+          font-size: 14px !important; /* Reduced from 16px */
+        }
+
+        /* Better touch targets */
+        button,
+        .btn-remove,
+        .btn-save-sale {
+          min-height: 42px; /* Reduced from 48px */
+          min-width: 42px; /* Reduced from 48px */
+        }
+
+        input,
+        select {
+          font-size: 14px !important; /* Reduced from 16px */
+        }
+      }
+
+      /* Extra small devices */
+      @media (max-width: 480px) {
+        .product-row input,
+        .product-row select {
+          width: 90px !important; /* Reduced from 100px */
+        }
+
+        .cart-item input {
+          width: 65px !important; /* Reduced from 70px */
+        }
+
+        .product-row > div::before {
+          min-width: 70px !important; /* Further reduced */
+          font-size: 12px !important;
+        }
+
+        .cart-item > div::before {
+          min-width: 65px !important;
+          font-size: 11px !important;
+        }
+      }
+
+      /* ===== CRITICAL FIX FOR PRODUCT SELECTION AND CART ===== */
+      @media (max-width: 768px) {
+        /* Product selection cards - COMPLETE REDESIGN */
+        #productSearchResults {
+          display: flex;
+          flex-direction: column;
+          gap: 10px; /* Reduced from 15px */
+        }
+
+        .product-row {
+          display: flex !important;
+          flex-direction: column !important;
+          padding: 12px !important; /* Reduced from 16px */
+          background: #ffffff !important;
+          border: 1px solid #e0e0e0 !important;
+          border-radius: 12px !important; /* Reduced from 16px */
+          box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03) !important; /* Reduced */
+          margin-bottom: 0 !important;
+        }
+
+        .product-row > div {
+          display: flex !important;
+          justify-content: space-between !important;
+          align-items: center !important;
+          width: 100% !important;
+          padding: 6px 0 !important; /* Reduced from 8px */
+          border-bottom: 1px dashed #eef2f7 !important;
+        }
+
+        .product-row > div::before {
+          content: attr(data-label) !important;
+          font-weight: 600 !important;
+          color: #667eea !important;
+          font-size: 13px !important; /* Reduced from 14px */
+          min-width: 80px !important; /* Reduced from 90px */
+        }
+
+        /* Style inputs in product row */
+        .product-row select,
+        .product-row input[type="number"] {
+          width: 120px !important; /* Reduced from 140px */
+          padding: 6px !important; /* Reduced from 10px */
+          border: 2px solid #e0e0e0 !important;
+          border-radius: 6px !important; /* Reduced from 10px */
+          font-size: 13px !important; /* Reduced from 15px */
+          background: white !important;
+        }
+
+        .product-row button {
+          width: 100% !important;
+          padding: 10px !important; /* Reduced from 14px */
+          background: #667eea !important;
+          color: white !important;
+          border: none !important;
+          border-radius: 8px !important; /* Reduced from 12px */
+          font-size: 14px !important; /* Reduced from 16px */
+          font-weight: 600 !important;
+          gap: 6px !important; /* Reduced from 8px */
+          margin-top: 5px !important;
+        }
+
+        /* Cart items - COMPLETE REDESIGN */
+        #cartItems {
+          display: flex;
+          flex-direction: column;
+          gap: 8px; /* Reduced from 12px */
+        }
+
+        .cart-item {
+          display: flex !important;
+          flex-direction: column !important;
+          padding: 12px !important; /* Reduced from 16px */
+          background: #f8f9fa !important;
+          border: 1px solid #e0e0e0 !important;
+          border-radius: 12px !important; /* Reduced from 16px */
+          margin-bottom: 0 !important;
+        }
+
+        .cart-item > div {
+          display: flex !important;
+          justify-content: space-between !important;
+          align-items: center !important;
+          width: 100% !important;
+          padding: 6px 0 !important; /* Reduced from 8px */
+          border-bottom: 1px dashed #eef2f7 !important;
+        }
+
+        .cart-item > div::before {
+          content: attr(data-label) !important;
+          font-weight: 600 !important;
+          color: #ff6b6b !important;
+          font-size: 13px !important; /* Reduced from 14px */
+          min-width: 70px !important; /* Reduced from 80px */
+        }
+
+        /* Style cart inputs */
+        .cart-item input[type="number"] {
+          width: 80px !important; /* Reduced from 90px */
+          padding: 6px !important; /* Reduced from 8px */
+          border: 2px solid #e0e0e0 !important;
+          border-radius: 6px !important; /* Reduced from 8px */
+          font-size: 13px !important; /* Reduced from 15px */
+        }
+
+        .cart-item .btn-remove {
+          width: 36px !important; /* Reduced from 44px */
+          height: 36px !important; /* Reduced from 44px */
+          font-size: 16px !important; /* Reduced from 18px */
+        }
+
+        /* Cart summary section */
+        .cart-total {
+          margin-top: 15px !important; /* Reduced from 20px */
+          padding: 12px !important; /* Reduced from 16px */
+          background: #f8f9fa !important;
+          border-radius: 12px !important; /* Reduced from 16px */
+        }
+
+        .total-row {
+          display: flex !important;
+          justify-content: space-between !important;
+          align-items: center !important;
+          padding: 6px 0 !important; /* Reduced from 8px */
+          font-size: 14px !important; /* Reduced from 16px */
+        }
+
+        .total-row input {
+          width: 80px !important; /* Reduced from 100px */
+          padding: 6px !important; /* Reduced from 10px */
+          border: 2px solid #e0e0e0 !important;
+          border-radius: 6px !important; /* Reduced from 10px */
+          font-size: 14px !important; /* Reduced from 16px */
+        }
+
+        .grand-total {
+          font-size: 18px !important; /* Reduced from 22px */
+          padding-top: 8px !important; /* Reduced from 12px */
+          margin-top: 5px !important; /* Reduced from 8px */
+        }
+      }
+
+      /* Heading styles - compact */
+      h3 {
+        margin-bottom: 10px !important; /* Reduced from 15px */
+        gap: 6px !important; /* Reduced from 10px */
+        font-size: 15px !important; /* Added */
+      }
+
+      h3 i {
+        font-size: 16px !important; /* Added */
+      }
+    </style>
+  </head>
+  <body>
+    <div class="dashboard-container">
+      <!-- SIDEBAR - LEFT SIDE -->
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+          <div class="shop-logo-small">
+            <i class="fas fa-store"></i>
+          </div>
+          <h2>Farming Family</h2>
+          <p class="user-role" id="userRoleDisplay">লোড হচ্ছে...</p>
+        </div>
+
+        <nav class="sidebar-nav">
+          <ul id="mainMenu">
+            <li>
+              <a href="dashboard.html">
+                <i class="fas fa-home"></i>
+                <span>ড্যাশবোর্ড</span>
+              </a>
+            </li>
+            <li class="active">
+              <a href="sales.html">
+                <i class="fas fa-cash-register"></i>
+                <span>বিক্রয়</span>
+              </a>
+            </li>
+            <li>
+              <a href="products.html">
+                <i class="fas fa-box"></i>
+                <span>পণ্য</span>
+              </a>
+            </li>
+            <li>
+              <a href="expenses.html">
+                <i class="fas fa-arrow-down"></i>
+                <span>খরচ ও ক্রয়</span>
+              </a>
+            </li>
+            <li>
+              <a href="reports.html">
+                <i class="fas fa-chart-bar"></i>
+                <span>রিপোর্ট</span>
+              </a>
+            </li>
+            <li class="logout">
+              <a href="#" id="logoutBtn">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>লগআউট</span>
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </aside>
+
+      <!-- MAIN CONTENT - RIGHT SIDE -->
+      <main class="main-content">
+        <header class="top-bar">
+          <button id="menuToggle" class="menu-toggle">
+            <i class="fas fa-bars"></i>
+          </button>
+          <h1>বিক্রয়</h1>
+          <div class="user-info">
+            <span id="userName">অতিথি</span>
+            <i class="fas fa-user-circle"></i>
+          </div>
+        </header>
+
+        <div class="content">
+          <div class="sales-container">
+            <!-- Left Column - Product Selection -->
+            <div>
+              <!-- Customer Information -->
+              <div class="customer-section">
+                <h3 style="display: flex; align-items: center; gap: 6px; margin-bottom: 10px">
+                  <i class="fas fa-user" style="color: #667eea; font-size: 16px"></i>
+                  গ্রাহকের তথ্য
+                </h3>
+                <div class="customer-fields">
+                  <input type="text" id="customerName" placeholder="গ্রাহকের নাম (ঐচ্ছিক)" />
+                  <input type="text" id="customerPhone" placeholder="মোবাইল নম্বর (ঐচ্ছিক)" />
+                </div>
+              </div>
+
+              <!-- Product Search and Selection -->
+              <div class="product-search-section">
+                <h3 style="display: flex; align-items: center; gap: 6px; margin-bottom: 10px">
+                  <i class="fas fa-box" style="color: #667eea; font-size: 16px"></i>
+                  পণ্য নির্বাচন
+                </h3>
+
+                <div class="search-header">
+                  <input type="text" id="productSearch" placeholder="পণ্যের নাম লিখুন..." />
+                  <select id="categoryFilter">
+                    <option value="">সব ক্যাটাগরি</option>
+                    <option value="ডিম">ডিম</option>
+                    <option value="প্রাণী খাদ্য">প্রাণী খাদ্য</option>
+                    <option value="প্রাণী ওষুধ">প্রাণী ওষুধ</option>
+                    <option value="কৃষি যন্ত্রপাতি">কৃষি যন্ত্রপাতি</option>
+                    <option value="পাখি ও বাচ্চা">পাখি ও বাচ্চা</option>
+                  </select>
+                </div>
+
+                <div id="productSearchResults">
+                  <!-- Search results will appear here -->
+                  <p style="text-align: center; color: #666; padding: 15px; font-size: 14px">
+                    <i class="fas fa-search"></i> পণ্য খুঁজতে উপরের বক্সে টাইপ করুন
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Column - Cart & Checkout -->
+            <div>
+              <!-- Shopping Cart -->
+              <div class="cart-section">
+                <h3 style="display: flex; align-items: center; gap: 6px; margin-bottom: 12px">
+                  <i class="fas fa-shopping-cart" style="color: #667eea; font-size: 16px"></i>
+                  বিক্রয় কার্ট
+                </h3>
+
+                <div id="cartItems" style="max-height: 250px; overflow-y: auto">
+                  <!-- Cart items will appear here -->
+                  <p style="text-align: center; color: #666; padding: 15px; font-size: 14px">
+                    <i class="fas fa-box-open"></i> কার্ট খালি
+                  </p>
+                </div>
+
+                <div class="cart-total">
+                  <div class="total-row">
+                    <span>সর্বমোট:</span>
+                    <span id="subtotal">০.০০</span>
+                  </div>
+                  <div class="total-row">
+                    <span>ছাড়:</span>
+                    <span>
+                      <input
+                        type="number"
+                        id="discountInput"
+                        value="0.00"
+                        min="0"
+                        step="0.05"
+                        style="
+                          width: 80px;
+                          padding: 5px;
+                          border: 2px solid #e0e0e0;
+                          border-radius: 4px;
+                          text-align: right;
+                          font-size: 14px;
+                        "
+                      />
+                    </span>
+                  </div>
+                  <div class="grand-total">
+                    <span>মোট দেয়:</span>
+                    <span id="grandTotal">০.০০</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Payment Section -->
+              <div class="payment-section">
+                <h3 style="display: flex; align-items: center; gap: 6px; margin-bottom: 10px">
+                  <i class="fas fa-money-bill" style="color: #667eea; font-size: 16px"></i>
+                  পেমেন্ট
+                </h3>
+
+                <div style="margin-bottom: 10px">
+                  <label style="display: block; margin-bottom: 3px; color: #666; font-size: 13px"
+                    >নগদ প্রদান</label
+                  >
+                  <input
+                    type="number"
+                    id="cashReceived"
+                    placeholder="০.০০"
+                    min="0"
+                    step="0.05"
+                    style="
+                      width: 100%;
+                      padding: 8px;
+                      border: 2px solid #e0e0e0;
+                      border-radius: 6px;
+                      font-size: 15px;
+                    "
+                  />
+                </div>
+
+                <div
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    margin-bottom: 12px;
+                    padding: 10px;
+                    background: #f8f9fa;
+                    border-radius: 8px;
+                  "
+                >
+                  <span style="font-weight: 600; font-size: 14px">পরিবর্তন:</span>
+                  <span id="changeAmount" style="font-size: 18px; font-weight: 700; color: #00b09b"
+                    >০.০০</span
+                  >
+                </div>
+
+                <button id="saveSaleBtn" class="btn-save-sale">
+                  <i class="fas fa-save"></i> বিক্রয় সংরক্ষণ করুন
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Role Based UI Script -->
+    <script>
+      (function () {
+        const userStr = localStorage.getItem("farming_user") || localStorage.getItem("user");
+        if (!userStr) {
+          window.location.href = "index.html";
+          return;
+        }
+
+        const user = JSON.parse(userStr);
+
+        // Update user name and role
+        const userNameEl = document.getElementById("userName");
+        if (userNameEl) userNameEl.textContent = user.full_name || user.username;
+
+        const userRoleEl = document.querySelector(".user-role");
+        if (userRoleEl) {
+          const roleText =
+            user.role === "owner"
+              ? "👑 মালিক"
+              : user.role === "manager"
+                ? "🟡 ব্যবস্থাপক"
+                : "🔵 ক্যাশিয়ার";
+          userRoleEl.textContent = roleText;
+        }
+
+        // Role-based menu visibility
+        const menuItems = document.querySelectorAll(".sidebar-nav li");
+        menuItems.forEach((item) => (item.style.display = "block"));
+
+        if (user.role === "cashier") {
+          menuItems.forEach((item) => {
+            const link = item.querySelector("a");
+            if (link) {
+              const href = link.getAttribute("href") || "";
+              if (!href.includes("sales.html") && !item.classList.contains("logout")) {
+                item.style.display = "none";
+              }
+            }
+          });
+        }
+
+        // Logout functionality
+        const logoutBtn = document.getElementById("logoutBtn");
+        if (logoutBtn) {
+          logoutBtn.addEventListener("click", function (e) {
+            e.preventDefault();
+            localStorage.removeItem("farming_user");
+            localStorage.removeItem("user");
+            window.location.href = "index.html";
+          });
+        }
+
+        // Mobile menu toggle
+        const menuToggle = document.getElementById("menuToggle");
+        const sidebar = document.getElementById("sidebar");
+        if (menuToggle && sidebar) {
+          menuToggle.addEventListener("click", function () {
+            sidebar.classList.toggle("active");
+          });
+        }
+      })();
+    </script>
+
+    <script src="js/sales.js"></script>
+    <script>
+      // Force data labels for mobile view
+      function setDataLabels() {
+        // Set data labels for product rows
+        document.querySelectorAll(".product-row").forEach((row, rowIndex) => {
+          row.querySelectorAll("div").forEach((div, index) => {
+            if (index === 0) div.setAttribute("data-label", "📦 পণ্য");
+            if (index === 1) div.setAttribute("data-label", "⚖️ ইউনিট");
+            if (index === 2) div.setAttribute("data-label", "💰 ক্রয়");
+            if (index === 3) div.setAttribute("data-label", "💵 বিক্রয়");
+            if (index === 4) div.setAttribute("data-label", "📊 স্টক");
+            if (index === 5) div.setAttribute("data-label", "🔢 পরিমাণ");
+            if (index === 6) div.setAttribute("data-label", "");
+          });
+        });
+
+        // Set data labels for cart items
+        document.querySelectorAll(".cart-item").forEach((item, itemIndex) => {
+          item.querySelectorAll("div").forEach((div, index) => {
+            if (index === 0) div.setAttribute("data-label", "🛒 পণ্য");
+            if (index === 1) div.setAttribute("data-label", "📊 পরিমাণ");
+            if (index === 2) div.setAttribute("data-label", "💵 দর");
+            if (index === 3) div.setAttribute("data-label", "💰 মোট");
+            if (index === 4) div.setAttribute("data-label", "🏷️ ছাড়");
+            if (index === 5) div.setAttribute("data-label", "");
+          });
+        });
+      }
+
+      // Run when products load and whenever cart updates
+      setDataLabels();
+
+      // Watch for changes
+      const observer = new MutationObserver(setDataLabels);
+      observer.observe(document.getElementById("productSearchResults"), {
+        childList: true,
+        subtree: true
+      });
+      observer.observe(document.getElementById("cartItems"), { childList: true, subtree: true });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="bn">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ড্যাশবোর্ড - Farming Family</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+
+    <!-- PWA Support -->
+    <link rel="manifest" href="manifest.json" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Farming Family" />
+    <meta name="theme-color" content="#764ba2" />
+
+    <!-- iOS Icons -->
+    <link rel="apple-touch-icon" href="icons/icon-152x152.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152x152.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-192x192.png" />
+    <link rel="apple-touch-icon" sizes="167x167" href="icons/icon-152x152.png" />
+
+    <style>
+      /* Simple stats grid */
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 15px;
+        margin-bottom: 20px;
+      }
+
+      .stat-card {
+        background: white;
+        border-radius: 12px;
+        padding: 15px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+        text-align: center;
+      }
+
+      .stat-card i {
+        font-size: 24px;
+        color: #667eea;
+        margin-bottom: 8px;
+      }
+
+      .stat-card h3 {
+        color: #666;
+        font-size: 13px;
+        margin-bottom: 5px;
+      }
+
+      .stat-card p {
+        color: #333;
+        font-size: 22px;
+        font-weight: 700;
+        margin: 0;
+      }
+
+      @media (max-width: 768px) {
+        .stats-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="dashboard-container">
+      <!-- SIDEBAR - LEFT SIDE -->
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+          <div class="shop-logo-small">
+            <i class="fas fa-store"></i>
+          </div>
+          <h2>Farming Family</h2>
+          <p class="user-role" id="userRoleDisplay">লোড হচ্ছে...</p>
+        </div>
+
+        <nav class="sidebar-nav">
+          <ul id="mainMenu">
+            <li class="active">
+              <a href="dashboard.html">
+                <i class="fas fa-home"></i>
+                <span>ড্যাশবোর্ড</span>
+              </a>
+            </li>
+            <li>
+              <a href="sales.html">
+                <i class="fas fa-cash-register"></i>
+                <span>বিক্রয়</span>
+              </a>
+            </li>
+            <li>
+              <a href="products.html">
+                <i class="fas fa-box"></i>
+                <span>পণ্য</span>
+              </a>
+            </li>
+            <li>
+              <a href="expenses.html">
+                <i class="fas fa-arrow-down"></i>
+                <span>খরচ ও ক্রয়</span>
+              </a>
+            </li>
+            <li>
+              <a href="reports.html">
+                <i class="fas fa-chart-bar"></i>
+                <span>রিপোর্ট</span>
+              </a>
+            </li>
+            <li class="logout">
+              <a href="#" id="logoutBtn">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>লগআউট</span>
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </aside>
+
+      <!-- MAIN CONTENT - RIGHT SIDE -->
+      <main class="main-content">
+        <header class="top-bar">
+          <button id="menuToggle" class="menu-toggle">
+            <i class="fas fa-bars"></i>
+          </button>
+          <h1>ড্যাশবোর্ড</h1>
+          <div class="user-info">
+            <span id="userName">অতিথি</span>
+            <i class="fas fa-user-circle"></i>
+          </div>
+        </header>
+
+        <div class="content">
+          <!-- Simple Stats Cards -->
+          <div class="stats-grid">
+            <div class="stat-card">
+              <i class="fas fa-money-bill-wave"></i>
+              <h3>আজকের বিক্রয়</h3>
+              <p id="todaySales">০.০০</p>
+            </div>
+
+            <div class="stat-card">
+              <i class="fas fa-arrow-down"></i>
+              <h3>আজকের খরচ</h3>
+              <p id="todayExpenses">০.০০</p>
+            </div>
+
+            <div class="stat-card">
+              <i class="fas fa-box"></i>
+              <h3>মোট পণ্য</h3>
+              <p id="totalProducts">১২</p>
+            </div>
+
+            <div class="stat-card">
+              <i class="fas fa-exclamation-triangle"></i>
+              <h3>কম স্টক</h3>
+              <p id="lowStockCount">০</p>
+            </div>
+          </div>
+
+          <!-- Simple message -->
+          <p style="text-align: center; color: #666; margin-top: 30px; font-size: 14px">
+            বিস্তারিত তথ্যের জন্য রিপোর্ট পৃষ্ঠা দেখুন
+          </p>
+        </div>
+      </main>
+    </div>
+
+    <!-- Simple Dashboard Script -->
+    <script>
+      (function () {
+        const userStr = localStorage.getItem("farming_user") || localStorage.getItem("user");
+        if (!userStr) {
+          window.location.href = "index.html";
+          return;
+        }
+
+        const user = JSON.parse(userStr);
+
+        // Update user name and role
+        const userNameEl = document.getElementById("userName");
+        if (userNameEl) userNameEl.textContent = user.full_name || user.username;
+
+        const userRoleEl = document.querySelector(".user-role");
+        if (userRoleEl) {
+          let roleText = "";
+          if (user.role === "owner") roleText = "👑 মালিক";
+          else if (user.role === "manager") roleText = "🟡 ব্যবস্থাপক";
+          else if (user.role === "cashier") roleText = "🔵 ক্যাশিয়ার";
+          userRoleEl.textContent = roleText;
+        }
+
+        // Role-based menu
+        const menuItems = document.querySelectorAll(".sidebar-nav li");
+        menuItems.forEach((item) => (item.style.display = "block"));
+
+        if (user.role === "cashier") {
+          menuItems.forEach((item) => {
+            const link = item.querySelector("a");
+            if (link) {
+              const href = link.getAttribute("href") || "";
+              if (!href.includes("sales.html") && !item.classList.contains("logout")) {
+                item.style.display = "none";
+              }
+            }
+          });
+        }
+
+        // Logout
+        const logoutBtn = document.getElementById("logoutBtn");
+        if (logoutBtn) {
+          logoutBtn.addEventListener("click", function (e) {
+            e.preventDefault();
+            localStorage.removeItem("farming_user");
+            localStorage.removeItem("user");
+            window.location.href = "index.html";
+          });
+        }
+
+        // Mobile menu toggle
+        const menuToggle = document.getElementById("menuToggle");
+        const sidebar = document.getElementById("sidebar");
+        if (menuToggle && sidebar) {
+          menuToggle.addEventListener("click", function () {
+            sidebar.classList.toggle("active");
+          });
+        }
+
+        // Simple static data (no API calls)
+        document.getElementById("totalProducts").textContent = "১২";
+        document.getElementById("lowStockCount").textContent = "০";
+        document.getElementById("todaySales").textContent = "০.০০";
+        document.getElementById("todayExpenses").textContent = "০.০০";
+      })();
+    </script>
+  </body>
+</html>
