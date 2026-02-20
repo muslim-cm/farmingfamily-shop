@@ -1,6 +1,6 @@
 // ===========================================
 // FARMING FAMILY SHOP - REPORTS
-// Task 4.6 & 4.7: Report Dashboard + PDF Generation
+// UPDATED WITH PRODUCT-WISE TABLES AND PROFIT CALCULATION
 // ===========================================
 
 const SUPABASE_URL = "https://vhdjqgwbeezmwllfbljp.supabase.co";
@@ -18,12 +18,11 @@ if (currentUser.role === "cashier") {
   window.location.href = "sales.html";
 }
 
-// ========== FORMAT CURRENCY ==========
+// ========== UTILITY FUNCTIONS ==========
 function formatCurrency(amount) {
   return parseFloat(amount || 0).toFixed(2) + " টাকা";
 }
 
-// ========== FORMAT DATE ==========
 function formatDate(date) {
   const d = new Date(date);
   return d.toLocaleDateString("bn-BD", {
@@ -33,61 +32,353 @@ function formatDate(date) {
   });
 }
 
+function formatDateShort(date) {
+  const d = new Date(date);
+  return d.toLocaleDateString("bn-BD", {
+    day: "numeric",
+    month: "short"
+  });
+}
+
+// ========== TOGGLE SECTIONS ==========
+window.toggleSection = function (sectionId) {
+  const section = document.getElementById(sectionId);
+  const toggle = section.previousElementSibling;
+  if (section.classList.contains("collapsed")) {
+    section.classList.remove("collapsed");
+    toggle.classList.remove("collapsed");
+  } else {
+    section.classList.add("collapsed");
+    toggle.classList.add("collapsed");
+  }
+};
+
 // ========== LOAD DAILY REPORT ==========
 async function loadDailyReport() {
   const date = new Date().toISOString().split("T")[0];
 
   try {
-    // Fetch daily summary
-    const summaryResponse = await fetch(`${API_BASE}/reports-api/daily?date=${date}`);
-    const summaryData = await summaryResponse.json();
+    // Fetch all required data in parallel
+    const [salesRes, purchasesRes, expensesRes, damagesRes, productsRes, inventoryRes] =
+      await Promise.all([
+        fetch(`${API_BASE}/sales-api/date?date=${date}`),
+        fetch(`${API_BASE}/purchases-api/date?date=${date}`),
+        fetch(`${API_BASE}/expenses-api/date?date=${date}`),
+        fetch(`${API_BASE}/adjustments-api/date?date=${date}`),
+        fetch(`${API_BASE}/products-api/products`),
+        fetch(`${API_BASE}/reports-api/inventory`)
+      ]);
 
-    if (summaryData.success) {
-      const summary = summaryData.summary || {};
+    const salesData = await salesRes.json();
+    const purchasesData = await purchasesRes.json();
+    const expensesData = await expensesRes.json();
+    const damagesData = await damagesRes.json();
+    const productsData = await productsRes.json();
+    const inventoryData = await inventoryRes.json();
 
-      document.getElementById("dailyTotalSales").textContent = formatCurrency(summary.total_sales);
-      document.getElementById("dailyTransactions").textContent = summary.total_transactions || 0;
-      document.getElementById("dailyTotalExpenses").textContent = formatCurrency(
-        summary.total_expenses
-      );
-      document.getElementById("dailyNetProfit").textContent = formatCurrency(summary.net_profit);
+    // Get previous day's inventory (for start of day)
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const prevDate = yesterday.toISOString().split("T")[0];
 
-      // Update date display
-      const today = new Date();
-      const banglaMonths = [
-        "জানুয়ারি",
-        "ফেব্রুয়ারি",
-        "মার্চ",
-        "এপ্রিল",
-        "মে",
-        "জুন",
-        "জুলাই",
-        "আগস্ট",
-        "সেপ্টেম্বর",
-        "অক্টোবর",
-        "নভেম্বর",
-        "ডিসেম্বর"
-      ];
-      document.getElementById("dailyReportDate").innerHTML =
-        `আজকে: ${banglaMonths[today.getMonth()]} ${today.getDate()}, ${today.getFullYear()}`;
-    }
+    // For now, use current inventory as end, estimate start
+    // In production, you'd track daily opening/closing inventory
+    const startInv = inventoryData.total_value || 0;
+    const endInv = inventoryData.total_value || 0;
 
-    // Fetch low stock alerts
-    const lowStockResponse = await fetch(`${API_BASE}/products-api/low-stock`);
-    const lowStockData = await lowStockResponse.json();
+    // Calculate totals
+    const totalSales = salesData.total_sales || 0;
+    const totalPurchases = purchasesData.total || 0;
+    const totalExpenses = expensesData.total || 0;
+    const totalDamages = damagesData.total || 0;
 
-    const lowStockAlert = document.getElementById("lowStockAlert");
-    const lowStockCount = document.getElementById("lowStockCount");
+    // Calculate profit: (End Inv + Sales) - (Start Inv + Purchases + Damages + Expenses)
+    const profit = endInv + totalSales - (startInv + totalPurchases + totalDamages + totalExpenses);
 
-    if (lowStockData.success && lowStockData.count > 0) {
-      lowStockAlert.style.display = "flex";
-      lowStockCount.textContent = `${lowStockData.count}টি পণ্যের স্টক কম`;
-    } else {
-      lowStockAlert.style.display = "none";
-    }
+    // Update summary
+    document.getElementById("dailyStartInv").textContent = formatCurrency(startInv);
+    document.getElementById("dailyPurchases").textContent = formatCurrency(totalPurchases);
+    document.getElementById("dailySales").textContent = formatCurrency(totalSales);
+    document.getElementById("dailyDamage").textContent = formatCurrency(totalDamages);
+    document.getElementById("dailyExpenses").textContent = formatCurrency(totalExpenses);
+    document.getElementById("dailyEndInv").textContent = formatCurrency(endInv);
+    document.getElementById("dailyProfit").textContent = formatCurrency(profit);
+    document.getElementById("dailyProfit").style.color = profit >= 0 ? "#00b09b" : "#ff6b6b";
+
+    // Update date display
+    const today = new Date();
+    const banglaMonths = [
+      "জানুয়ারি",
+      "ফেব্রুয়ারি",
+      "মার্চ",
+      "এপ্রিল",
+      "মে",
+      "জুন",
+      "জুলাই",
+      "আগস্ট",
+      "সেপ্টেম্বর",
+      "অক্টোবর",
+      "নভেম্বর",
+      "ডিসেম্বর"
+    ];
+    document.getElementById("dailyReportDate").innerHTML =
+      `আজকে: ${banglaMonths[today.getMonth()]} ${today.getDate()}, ${today.getFullYear()}`;
+
+    // Display product-wise sales
+    displayDailySales(salesData.items || []);
+
+    // Display product-wise purchases
+    displayDailyPurchases(purchasesData.items || []);
+
+    // Display expenses
+    displayDailyExpenses(expensesData.items || []);
+
+    // Display damages
+    displayDailyDamages(damagesData.items || []);
   } catch (error) {
     console.error("Error loading daily report:", error);
   }
+}
+
+function displayDailySales(sales) {
+  const tbody = document.getElementById("dailySalesBody");
+  const countSpan = document.getElementById("dailySalesCount");
+
+  if (!sales || sales.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" class="text-center">কোনো বিক্রয় নেই</td></tr>';
+    countSpan.textContent = "০টি";
+    return;
+  }
+
+  // Group by product
+  const productMap = new Map();
+  sales.forEach((sale) => {
+    const productId = sale.product_id;
+    if (!productMap.has(productId)) {
+      productMap.set(productId, {
+        name: sale.product_name || sale.products?.name_bengali || "অজানা",
+        quantity: 0,
+        total: 0,
+        profit: 0,
+        purchasePrice: sale.purchase_price || 0
+      });
+    }
+    const product = productMap.get(productId);
+    product.quantity += sale.quantity || 0;
+    product.total += sale.total_price || 0;
+    product.profit += (sale.total_price || 0) - (sale.purchase_price || 0) * (sale.quantity || 0);
+  });
+
+  let html = "";
+  productMap.forEach((product, id) => {
+    const avgPrice = product.quantity > 0 ? product.total / product.quantity : 0;
+    html += `
+      <tr>
+        <td>${product.name}</td>
+        <td class="text-right">${product.quantity.toFixed(2)}</td>
+        <td class="text-right">${avgPrice.toFixed(2)}</td>
+        <td class="text-right">${product.total.toFixed(2)}</td>
+        <td class="text-right ${product.profit >= 0 ? "profit-positive" : "profit-negative"}">
+          ${product.profit.toFixed(2)}
+        </td>
+      </tr>
+    `;
+  });
+
+  tbody.innerHTML = html;
+  countSpan.textContent = `${productMap.size}টি`;
+}
+
+function displayDailyPurchases(purchases) {
+  const tbody = document.getElementById("dailyPurchasesBody");
+  const countSpan = document.getElementById("dailyPurchasesCount");
+
+  if (!purchases || purchases.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" class="text-center">কোনো ক্রয় নেই</td></tr>';
+    countSpan.textContent = "০টি";
+    return;
+  }
+
+  // Group by product
+  const productMap = new Map();
+  purchases.forEach((purchase) => {
+    const productId = purchase.product_id;
+    if (!productMap.has(productId)) {
+      productMap.set(productId, {
+        name: purchase.product_name || purchase.products?.name_bengali || "অজানা",
+        quantity: 0,
+        total: 0,
+        unit: purchase.purchase_unit || "পিস",
+        rate: purchase.rate_per_unit || 0
+      });
+    }
+    const product = productMap.get(productId);
+    product.quantity += purchase.quantity || 0;
+    product.total += purchase.total_cost || 0;
+  });
+
+  let html = "";
+  productMap.forEach((product, id) => {
+    const avgRate = product.quantity > 0 ? product.total / product.quantity : 0;
+    html += `
+      <tr>
+        <td>${product.name}</td>
+        <td class="text-right">${product.quantity.toFixed(2)}</td>
+        <td>${product.unit}</td>
+        <td class="text-right">${avgRate.toFixed(2)}</td>
+        <td class="text-right">${product.total.toFixed(2)}</td>
+      </tr>
+    `;
+  });
+
+  tbody.innerHTML = html;
+  countSpan.textContent = `${productMap.size}টি`;
+}
+
+function displayDailyExpenses(expenses) {
+  const tbody = document.getElementById("dailyExpensesBody");
+  const countSpan = document.getElementById("dailyExpensesCount");
+
+  if (!expenses || expenses.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="3" class="text-center">কোনো খরচ নেই</td></tr>';
+    countSpan.textContent = "০টি";
+    return;
+  }
+
+  let html = "";
+  expenses.forEach((expense) => {
+    html += `
+      <tr>
+        <td>${expense.category || "অন্যান্য"}</td>
+        <td>${expense.description || "-"}</td>
+        <td class="text-right">${formatCurrency(expense.amount || 0)}</td>
+      </tr>
+    `;
+  });
+
+  tbody.innerHTML = html;
+  countSpan.textContent = `${expenses.length}টি`;
+}
+
+function displayDailyDamages(damages) {
+  const tbody = document.getElementById("dailyDamageBody");
+  const countSpan = document.getElementById("dailyDamageCount");
+
+  if (!damages || damages.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" class="text-center">কোনো ক্ষতি/মৃত্যু নেই</td></tr>';
+    countSpan.textContent = "০টি";
+    return;
+  }
+
+  let html = "";
+  damages.forEach((damage) => {
+    const loss = (damage.quantity_change || 0) * (damage.purchase_price || 0);
+    html += `
+      <tr>
+        <td>${damage.product_name || "অজানা"}</td>
+        <td>${damage.adjustment_type || "ক্ষতি"}</td>
+        <td class="text-right">${Math.abs(damage.quantity_change || 0).toFixed(2)}</td>
+        <td class="text-right profit-negative">${Math.abs(loss).toFixed(2)}</td>
+        <td>${damage.reason_bengali || "-"}</td>
+      </tr>
+    `;
+  });
+
+  tbody.innerHTML = html;
+  countSpan.textContent = `${damages.length}টি`;
+}
+
+// ========== LOAD INVENTORY REPORT ==========
+async function loadInventoryReport() {
+  try {
+    const [productsRes, lowStockRes] = await Promise.all([
+      fetch(`${API_BASE}/products-api/products`),
+      fetch(`${API_BASE}/products-api/low-stock`)
+    ]);
+
+    const productsData = await productsRes.json();
+    const lowStockData = await lowStockRes.json();
+
+    const products = productsData.data || [];
+    const lowStock = lowStockData.data || [];
+
+    // Calculate total inventory value
+    let totalValue = 0;
+    products.forEach((p) => {
+      totalValue += (p.purchase_price || 0) * (p.current_quantity || 0);
+    });
+
+    document.getElementById("totalProducts").textContent = products.length;
+    document.getElementById("totalStockValue").textContent =
+      totalValue.toLocaleString("bn-BD") + " টাকা";
+    document.getElementById("lowStockCount").textContent = lowStock.length + "টি";
+
+    // Display low stock items
+    displayLowStock(lowStock);
+
+    // Display all products
+    displayAllProducts(products);
+  } catch (error) {
+    console.error("Error loading inventory report:", error);
+  }
+}
+
+function displayLowStock(items) {
+  const tbody = document.getElementById("lowStockBody");
+
+  if (!items || items.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" class="text-center">কোনো পণ্য কম স্টকে নেই</td></tr>';
+    return;
+  }
+
+  let html = "";
+  items.forEach((item) => {
+    const shortage = item.min_stock - item.current_quantity;
+    const status = shortage > 5 ? "badge-danger" : "badge-warning";
+    const statusText = shortage > 5 ? "জরুরি" : "সতর্ক";
+
+    html += `
+      <tr>
+        <td>${item.name_bengali}</td>
+        <td class="text-right">${item.current_quantity}</td>
+        <td class="text-right">${item.min_stock}</td>
+        <td><span class="${status}">${statusText}</span></td>
+      </tr>
+    `;
+  });
+
+  tbody.innerHTML = html;
+}
+
+function displayAllProducts(products) {
+  const tbody = document.getElementById("allProductsBody");
+  const countSpan = document.getElementById("allProductsCount");
+
+  if (!products || products.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center">কোনো পণ্য নেই</td></tr>';
+    countSpan.textContent = "০টি";
+    return;
+  }
+
+  let html = "";
+  products.forEach((product) => {
+    const unitDisplay =
+      product.unit_type === "piece" ? "পিস" : product.unit_type === "weight" ? "কেজি" : "পিস/কেজি";
+
+    html += `
+      <tr>
+        <td>${product.name_bengali}</td>
+        <td>${product.category}</td>
+        <td class="text-right">${product.current_quantity}</td>
+        <td>${unitDisplay}</td>
+        <td class="text-right">${product.purchase_price || 0}</td>
+        <td class="text-right">${product.selling_price || 0}</td>
+      </tr>
+    `;
+  });
+
+  tbody.innerHTML = html;
+  countSpan.textContent = products.length + "টি";
 }
 
 // ========== LOAD MONTHLY REPORT ==========
@@ -95,504 +386,339 @@ window.loadMonthlyReport = async function () {
   const month = document.getElementById("monthSelector").value;
   const year = document.getElementById("yearSelector").value;
 
+  const startDate = `${year}-${month.padStart(2, "0")}-01`;
+  const endDate = new Date(year, month, 0).toISOString().split("T")[0];
+
   try {
-    const response = await fetch(`${API_BASE}/reports-api/monthly?year=${year}&month=${month}`);
-    const data = await response.json();
+    // Fetch all monthly data
+    const [salesRes, purchasesRes, expensesRes, damagesRes, inventoryRes] = await Promise.all([
+      fetch(`${API_BASE}/sales-api/range?start=${startDate}&end=${endDate}`),
+      fetch(`${API_BASE}/purchases-api/range?start=${startDate}&end=${endDate}`),
+      fetch(`${API_BASE}/expenses-api/range?start=${startDate}&end=${endDate}`),
+      fetch(`${API_BASE}/adjustments-api/range?start=${startDate}&end=${endDate}`),
+      fetch(`${API_BASE}/reports-api/inventory`)
+    ]);
 
-    if (data.success) {
-      const summary = data.summary || {};
+    const salesData = await salesRes.json();
+    const purchasesData = await purchasesRes.json();
+    const expensesData = await expensesRes.json();
+    const damagesData = await damagesRes.json();
+    const inventoryData = await inventoryRes.json();
 
-      document.getElementById("monthlyTotalSales").textContent = formatCurrency(
-        summary.total_sales
-      );
-      document.getElementById("monthlyTotalExpenses").textContent = formatCurrency(
-        summary.total_expenses
-      );
-      document.getElementById("monthlyNetProfit").textContent = formatCurrency(summary.net_profit);
-      document.getElementById("monthlyTransactions").textContent = summary.total_transactions || 0;
+    // Get start of month inventory (previous month's end)
+    // For now, use current inventory as end, estimate start
+    const startInv = inventoryData.total_value || 0;
+    const endInv = inventoryData.total_value || 0;
 
-      // Update month display
-      const banglaMonths = [
-        "জানুয়ারি",
-        "ফেব্রুয়ারি",
-        "মার্চ",
-        "এপ্রিল",
-        "মে",
-        "জুন",
-        "জুলাই",
-        "আগস্ট",
-        "সেপ্টেম্বর",
-        "অক্টোবর",
-        "নভেম্বর",
-        "ডিসেম্বর"
-      ];
-      document.getElementById("monthlyReportDate").innerHTML =
-        `${banglaMonths[parseInt(month) - 1]} ${year}`;
+    // Calculate totals
+    const totalSales = salesData.total || 0;
+    const totalPurchases = purchasesData.total || 0;
+    const totalExpenses = expensesData.total || 0;
+    const totalDamages = damagesData.total || 0;
 
-      // Display top products
-      const topProductsList = document.getElementById("topProductsList");
+    // Calculate profit
+    const profit = endInv + totalSales - (startInv + totalPurchases + totalDamages + totalExpenses);
 
-      if (data.top_products && data.top_products.length > 0) {
-        let html = "";
-        data.top_products.forEach((product, index) => {
-          html += `
-            <div class="product-item">
-              <div>
-                <span class="product-name">${index + 1}. ${product.name || "পণ্য"}</span>
-                <div class="product-stats">বিক্রি: ${product.quantity || 0} টি</div>
-              </div>
-              <div style="font-weight: 700; color: #2d3748;">
-                ${formatCurrency(product.revenue || 0)}
-              </div>
-            </div>
-          `;
-        });
-        topProductsList.innerHTML = html;
-      } else {
-        topProductsList.innerHTML =
-          '<p style="color: #718096; text-align: center; padding: 20px;">কোনো বিক্রয় নেই</p>';
-      }
-    }
+    // Update month display
+    const banglaMonths = [
+      "জানুয়ারি",
+      "ফেব্রুয়ারি",
+      "মার্চ",
+      "এপ্রিল",
+      "মে",
+      "জুন",
+      "জুলাই",
+      "আগস্ট",
+      "সেপ্টেম্বর",
+      "অক্টোবর",
+      "নভেম্বর",
+      "ডিসেম্বর"
+    ];
+    document.getElementById("monthlyReportDate").innerHTML =
+      `${banglaMonths[parseInt(month) - 1]} ${year}`;
+
+    // Update summary
+    document.getElementById("monthlyStartInv").textContent = formatCurrency(startInv);
+    document.getElementById("monthlyPurchases").textContent = formatCurrency(totalPurchases);
+    document.getElementById("monthlySales").textContent = formatCurrency(totalSales);
+    document.getElementById("monthlyDamage").textContent = formatCurrency(totalDamages);
+    document.getElementById("monthlyExpenses").textContent = formatCurrency(totalExpenses);
+    document.getElementById("monthlyEndInv").textContent = formatCurrency(endInv);
+    document.getElementById("monthlyProfit").textContent = formatCurrency(profit);
+    document.getElementById("monthlyProfit").style.color = profit >= 0 ? "#00b09b" : "#ff6b6b";
+
+    // Display monthly sales
+    displayMonthlySales(salesData.items || []);
+
+    // Display monthly purchases
+    displayMonthlyPurchases(purchasesData.items || []);
+
+    // Display monthly expenses
+    displayMonthlyExpenses(expensesData.items || []);
+
+    // Display monthly damages
+    displayMonthlyDamages(damagesData.items || []);
   } catch (error) {
     console.error("Error loading monthly report:", error);
   }
 };
 
-// ========== LOAD INVENTORY REPORT ==========
-async function loadInventoryReport() {
-  try {
-    const response = await fetch(`${API_BASE}/reports-api/inventory`);
-    const data = await response.json();
+function displayMonthlySales(sales) {
+  const tbody = document.getElementById("monthlySalesBody");
+  const countSpan = document.getElementById("monthlySalesCount");
 
-    if (data.success) {
-      document.getElementById("totalProducts").textContent = data.total_products || 0;
-      document.getElementById("totalStockValue").textContent =
-        (data.total_value || 0).toLocaleString("bn-BD") + " টাকা";
-      document.getElementById("lowStockItems").textContent = data.low_stock_count || 0;
-      document.getElementById("outOfStockItems").textContent =
-        data.low_stock_items?.filter((item) => item.current_quantity <= 0).length || 0;
-    }
-  } catch (error) {
-    console.error("Error loading inventory report:", error);
+  if (!sales || sales.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" class="text-center">কোনো বিক্রয় নেই</td></tr>';
+    countSpan.textContent = "০টি";
+    return;
   }
+
+  // Group by product
+  const productMap = new Map();
+  sales.forEach((sale) => {
+    const productId = sale.product_id;
+    if (!productMap.has(productId)) {
+      productMap.set(productId, {
+        name: sale.product_name || sale.products?.name_bengali || "অজানা",
+        quantity: 0,
+        total: 0,
+        profit: 0
+      });
+    }
+    const product = productMap.get(productId);
+    product.quantity += sale.quantity || 0;
+    product.total += sale.total_price || 0;
+  });
+
+  let html = "";
+  productMap.forEach((product, id) => {
+    const avgPrice = product.quantity > 0 ? product.total / product.quantity : 0;
+    // Estimate profit (simplified)
+    const estimatedProfit = product.total * 0.2; // 20% assumed profit
+
+    html += `
+      <tr>
+        <td>${product.name}</td>
+        <td class="text-right">${product.quantity.toFixed(2)}</td>
+        <td class="text-right">${avgPrice.toFixed(2)}</td>
+        <td class="text-right">${product.total.toFixed(2)}</td>
+        <td class="text-right profit-positive">${estimatedProfit.toFixed(2)}</td>
+      </tr>
+    `;
+  });
+
+  tbody.innerHTML = html;
+  countSpan.textContent = `${productMap.size}টি`;
 }
 
-// ========== GENERATE DAILY PDF ==========
+function displayMonthlyPurchases(purchases) {
+  const tbody = document.getElementById("monthlyPurchasesBody");
+  const countSpan = document.getElementById("monthlyPurchasesCount");
+
+  if (!purchases || purchases.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" class="text-center">কোনো ক্রয় নেই</td></tr>';
+    countSpan.textContent = "০টি";
+    return;
+  }
+
+  // Group by product
+  const productMap = new Map();
+  purchases.forEach((purchase) => {
+    const productId = purchase.product_id;
+    if (!productMap.has(productId)) {
+      productMap.set(productId, {
+        name: purchase.product_name || purchase.products?.name_bengali || "অজানা",
+        quantity: 0,
+        total: 0,
+        unit: purchase.purchase_unit || "পিস"
+      });
+    }
+    const product = productMap.get(productId);
+    product.quantity += purchase.quantity || 0;
+    product.total += purchase.total_cost || 0;
+  });
+
+  let html = "";
+  productMap.forEach((product, id) => {
+    const avgRate = product.quantity > 0 ? product.total / product.quantity : 0;
+    html += `
+      <tr>
+        <td>${product.name}</td>
+        <td class="text-right">${product.quantity.toFixed(2)}</td>
+        <td>${product.unit}</td>
+        <td class="text-right">${avgRate.toFixed(2)}</td>
+        <td class="text-right">${product.total.toFixed(2)}</td>
+      </tr>
+    `;
+  });
+
+  tbody.innerHTML = html;
+  countSpan.textContent = `${productMap.size}টি`;
+}
+
+function displayMonthlyExpenses(expenses) {
+  const tbody = document.getElementById("monthlyExpensesBody");
+  const countSpan = document.getElementById("monthlyExpensesCount");
+
+  if (!expenses || expenses.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" class="text-center">কোনো খরচ নেই</td></tr>';
+    countSpan.textContent = "০টি";
+    return;
+  }
+
+  let html = "";
+  expenses.forEach((expense) => {
+    html += `
+      <tr>
+        <td>${expense.category || "অন্যান্য"}</td>
+        <td>${expense.description || "-"}</td>
+        <td class="text-right">${formatCurrency(expense.amount || 0)}</td>
+        <td>${formatDateShort(expense.created_at)}</td>
+      </tr>
+    `;
+  });
+
+  tbody.innerHTML = html;
+  countSpan.textContent = `${expenses.length}টি`;
+}
+
+function displayMonthlyDamages(damages) {
+  const tbody = document.getElementById("monthlyDamageBody");
+  const countSpan = document.getElementById("monthlyDamageCount");
+
+  if (!damages || damages.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center">কোনো ক্ষতি/মৃত্যু নেই</td></tr>';
+    countSpan.textContent = "০টি";
+    return;
+  }
+
+  let html = "";
+  damages.forEach((damage) => {
+    const loss = (damage.quantity_change || 0) * (damage.purchase_price || 0);
+    html += `
+      <tr>
+        <td>${damage.product_name || "অজানা"}</td>
+        <td>${damage.adjustment_type || "ক্ষতি"}</td>
+        <td class="text-right">${Math.abs(damage.quantity_change || 0).toFixed(2)}</td>
+        <td class="text-right profit-negative">${Math.abs(loss).toFixed(2)}</td>
+        <td>${damage.reason_bengali || "-"}</td>
+        <td>${formatDateShort(damage.created_at)}</td>
+      </tr>
+    `;
+  });
+
+  tbody.innerHTML = html;
+  countSpan.textContent = `${damages.length}টি`;
+}
+
+// ========== PDF GENERATION ==========
 window.generateDailyPDF = function () {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
 
-  // Get data
-  const date = formatDate(new Date());
-  const sales = document.getElementById("dailyTotalSales").textContent;
-  const transactions = document.getElementById("dailyTransactions").textContent;
-  const expenses = document.getElementById("dailyTotalExpenses").textContent;
-  const profit = document.getElementById("dailyNetProfit").textContent;
-
-  // Add Shop Logo/Header
-  doc.setFillColor(102, 126, 234);
-  doc.rect(0, 0, 210, 40, "F");
-
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(22);
-  doc.setFont("helvetica", "bold");
-  doc.text("Farming Family Shop", 105, 20, { align: "center" });
-
-  doc.setFontSize(14);
-  doc.setFont("helvetica", "normal");
-  doc.text("দৈনিক রিপোর্ট", 105, 32, { align: "center" });
-
-  // Reset text color
-  doc.setTextColor(0, 0, 0);
-
-  // Date
-  doc.setFontSize(12);
-  doc.setFont("helvetica", "bold");
-  doc.text("তারিখ:", 20, 55);
-  doc.setFont("helvetica", "normal");
-  doc.text(date, 50, 55);
-
-  // Summary Table
-  doc.autoTable({
-    startY: 70,
-    head: [["বিবরণ", "পরিমাণ"]],
-    body: [
-      ["মোট বিক্রয়", sales],
-      ["মোট লেনদেন", transactions + " টি"],
-      ["মোট খরচ", expenses],
-      ["নিট মুনাফা", profit]
-    ],
-    theme: "striped",
-    headStyles: {
-      fillColor: [102, 126, 234],
-      textColor: [255, 255, 255],
-      fontStyle: "bold"
-    },
-    alternateRowStyles: {
-      fillColor: [245, 247, 250]
-    },
-    columnStyles: {
-      0: { cellWidth: 80 },
-      1: { cellWidth: 60, halign: "right" }
-    }
-  });
-
-  // Low Stock Alert
-  const lowStockAlert = document.getElementById("lowStockAlert");
-  if (lowStockAlert.style.display !== "none") {
-    const lowStockCount = document.getElementById("lowStockCount").textContent;
-
-    doc.setFillColor(255, 243, 224);
-    doc.setTextColor(230, 81, 0);
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "bold");
-    doc.text("⚠️ স্টক সতর্কতা", 20, doc.lastAutoTable.finalY + 20);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(0, 0, 0);
-    doc.text(lowStockCount, 20, doc.lastAutoTable.finalY + 30);
-  }
-
-  // Footer
-  const pageCount = doc.internal.getNumberOfPages();
-  for (let i = 1; i <= pageCount; i++) {
-    doc.setPage(i);
-    doc.setFontSize(10);
-    doc.setTextColor(150, 150, 150);
-    doc.text(
-      `রিপোর্ট generated: ${new Date().toLocaleString("bn-BD")}`,
-      105,
-      doc.internal.pageSize.height - 10,
-      { align: "center" }
-    );
-  }
-
-  // Save PDF
-  const fileName = `FarmingFamily_Daily_${new Date().toISOString().split("T")[0]}.pdf`;
-  doc.save(fileName);
-
-  // Offer WhatsApp share
-  if (confirm("✅ PDF রিপোর্ট তৈরি হয়েছে!\nWhatsApp এ শেয়ার করবেন?")) {
-    shareDailyWhatsApp();
-  }
-};
-
-// ========== GENERATE MONTHLY PDF ==========
-window.generateMonthlyPDF = function () {
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-
-  // Get data
-  const month = document.getElementById("monthSelector").value;
-  const year = document.getElementById("yearSelector").value;
-  const banglaMonths = [
-    "জানুয়ারি",
-    "ফেব্রুয়ারি",
-    "মার্চ",
-    "এপ্রিল",
-    "মে",
-    "জুন",
-    "জুলাই",
-    "আগস্ট",
-    "সেপ্টেম্বর",
-    "অক্টোবর",
-    "নভেম্বর",
-    "ডিসেম্বর"
-  ];
-  const monthName = banglaMonths[parseInt(month) - 1];
-
-  const sales = document.getElementById("monthlyTotalSales").textContent;
-  const transactions = document.getElementById("monthlyTransactions").textContent;
-  const expenses = document.getElementById("monthlyTotalExpenses").textContent;
-  const profit = document.getElementById("monthlyNetProfit").textContent;
-
   // Header
   doc.setFillColor(102, 126, 234);
-  doc.rect(0, 0, 210, 40, "F");
-
+  doc.rect(0, 0, 210, 30, "F");
   doc.setTextColor(255, 255, 255);
-  doc.setFontSize(22);
+  doc.setFontSize(18);
   doc.setFont("helvetica", "bold");
-  doc.text("Farming Family Shop", 105, 20, { align: "center" });
+  doc.text("Farming Family Shop", 105, 15, { align: "center" });
+  doc.setFontSize(12);
+  doc.text("দৈনিক রিপোর্ট", 105, 25, { align: "center" });
 
-  doc.setFontSize(14);
-  doc.setFont("helvetica", "normal");
-  doc.text("মাসিক রিপোর্ট", 105, 32, { align: "center" });
-
-  // Reset
+  // Date
   doc.setTextColor(0, 0, 0);
+  doc.setFontSize(10);
+  doc.text(`তারিখ: ${document.getElementById("dailyReportDate").textContent}`, 20, 40);
 
-  // Month/Year
+  // Profit Summary
   doc.setFontSize(12);
   doc.setFont("helvetica", "bold");
-  doc.text("মাস:", 20, 55);
-  doc.setFont("helvetica", "normal");
-  doc.text(`${monthName} ${year}`, 50, 55);
+  doc.text("লাভ/ক্ষতি হিসাব", 20, 55);
 
-  // Summary Table
+  const summaryData = [
+    ["শুরুর ইনভেন্টরি", document.getElementById("dailyStartInv").textContent],
+    ["মোট ক্রয়", document.getElementById("dailyPurchases").textContent],
+    ["মোট বিক্রয়", document.getElementById("dailySales").textContent],
+    ["মোট ক্ষতি/মৃত্যু", document.getElementById("dailyDamage").textContent],
+    ["অন্যান্য খরচ", document.getElementById("dailyExpenses").textContent],
+    ["শেষ ইনভেন্টরি", document.getElementById("dailyEndInv").textContent],
+    ["নিট লাভ/ক্ষতি", document.getElementById("dailyProfit").textContent]
+  ];
+
   doc.autoTable({
-    startY: 70,
-    head: [["বিবরণ", "পরিমাণ"]],
-    body: [
-      ["মোট বিক্রয়", sales],
-      ["মোট লেনদেন", transactions + " টি"],
-      ["মোট খরচ", expenses],
-      ["নিট মুনাফা", profit]
-    ],
-    theme: "striped",
-    headStyles: {
-      fillColor: [102, 126, 234],
-      textColor: [255, 255, 255],
-      fontStyle: "bold"
-    },
-    alternateRowStyles: {
-      fillColor: [245, 247, 250]
-    },
-    columnStyles: {
-      0: { cellWidth: 80 },
-      1: { cellWidth: 60, halign: "right" }
-    }
+    startY: 60,
+    body: summaryData,
+    theme: "plain",
+    styles: { fontSize: 10 },
+    columnStyles: { 0: { cellWidth: 80 }, 1: { cellWidth: 60, halign: "right" } }
   });
 
-  // Top Products
-  const topProductsList = document.getElementById("topProductsList");
-  if (
-    topProductsList.children.length > 0 &&
-    !topProductsList.innerHTML.includes("কোনো বিক্রয় নেই")
-  ) {
-    doc.setFontSize(14);
-    doc.setFont("helvetica", "bold");
-    doc.text("শীর্ষ ৫ পণ্য", 20, doc.lastAutoTable.finalY + 20);
+  // Sales Table
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "bold");
+  doc.text("বিক্রয় তালিকা", 20, doc.lastAutoTable.finalY + 15);
 
-    // Extract product data from HTML
-    const products = [];
-    const productItems = topProductsList.querySelectorAll(".product-item");
-    productItems.forEach((item) => {
-      const nameElement = item.querySelector(".product-name");
-      const statsElement = item.querySelector(".product-stats");
-      const revenueElement = item.querySelector('div[style*="font-weight: 700"]');
-
-      const name = nameElement ? nameElement.textContent : "";
-      const stats = statsElement ? statsElement.textContent : "";
-      const revenue = revenueElement ? revenueElement.textContent : "";
-
-      if (name && revenue) {
-        products.push([name, stats, revenue]);
-      }
+  const salesTable = document.getElementById("dailySalesTable");
+  if (salesTable) {
+    doc.autoTable({
+      startY: doc.lastAutoTable.finalY + 20,
+      html: "#dailySalesTable",
+      theme: "striped",
+      styles: { fontSize: 9 },
+      headStyles: { fillColor: [102, 126, 234] }
     });
-
-    if (products.length > 0) {
-      doc.autoTable({
-        startY: doc.lastAutoTable.finalY + 30,
-        head: [["পণ্যের নাম", "বিক্রয়", "আয়"]],
-        body: products,
-        theme: "striped",
-        headStyles: {
-          fillColor: [0, 176, 155],
-          textColor: [255, 255, 255],
-          fontStyle: "bold"
-        }
-      });
-    }
   }
 
-  // Footer
-  const pageCount = doc.internal.getNumberOfPages();
-  for (let i = 1; i <= pageCount; i++) {
-    doc.setPage(i);
-    doc.setFontSize(10);
-    doc.setTextColor(150, 150, 150);
-    doc.text(
-      `রিপোর্ট generated: ${new Date().toLocaleString("bn-BD")}`,
-      105,
-      doc.internal.pageSize.height - 10,
-      { align: "center" }
-    );
-  }
-
-  // Save PDF
-  const fileName = `FarmingFamily_Monthly_${year}_${month}.pdf`;
-  doc.save(fileName);
-
-  if (confirm("✅ PDF রিপোর্ট তৈরি হয়েছে!\nWhatsApp এ শেয়ার করবেন?")) {
-    shareMonthlyWhatsApp();
-  }
-};
-
-// ========== GENERATE INVENTORY PDF ==========
-window.generateInventoryPDF = function () {
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-
-  // Get data
-  const totalProducts = document.getElementById("totalProducts").textContent;
-  const totalValue = document.getElementById("totalStockValue").textContent;
-  const lowStock = document.getElementById("lowStockItems").textContent;
-  const outOfStock = document.getElementById("outOfStockItems").textContent;
-
-  // Header
-  doc.setFillColor(102, 126, 234);
-  doc.rect(0, 0, 210, 40, "F");
-
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(22);
-  doc.setFont("helvetica", "bold");
-  doc.text("Farming Family Shop", 105, 20, { align: "center" });
-
-  doc.setFontSize(14);
-  doc.setFont("helvetica", "normal");
-  doc.text("ইনভেন্টরি রিপোর্ট", 105, 32, { align: "center" });
-
-  // Reset
-  doc.setTextColor(0, 0, 0);
-
-  // Date
+  // Purchases Table
   doc.setFontSize(12);
   doc.setFont("helvetica", "bold");
-  doc.text("তারিখ:", 20, 55);
-  doc.setFont("helvetica", "normal");
-  doc.text(formatDate(new Date()), 50, 55);
+  doc.text("ক্রয় তালিকা", 20, doc.lastAutoTable.finalY + 15);
 
-  // Summary Table
   doc.autoTable({
-    startY: 70,
-    head: [["বিবরণ", "পরিমাণ"]],
-    body: [
-      ["মোট পণ্য", totalProducts + " টি"],
-      ["মোট মূল্য", totalValue],
-      ["স্টক কম", lowStock + " টি"],
-      ["স্টক শেষ", outOfStock + " টি"]
-    ],
+    startY: doc.lastAutoTable.finalY + 20,
+    html: "#dailyPurchasesTable",
     theme: "striped",
-    headStyles: {
-      fillColor: [102, 126, 234],
-      textColor: [255, 255, 255],
-      fontStyle: "bold"
-    },
-    alternateRowStyles: {
-      fillColor: [245, 247, 250]
-    },
-    columnStyles: {
-      0: { cellWidth: 80 },
-      1: { cellWidth: 60, halign: "right" }
-    }
+    styles: { fontSize: 9 },
+    headStyles: { fillColor: [0, 176, 155] }
   });
 
-  // Footer
-  const pageCount = doc.internal.getNumberOfPages();
-  for (let i = 1; i <= pageCount; i++) {
-    doc.setPage(i);
-    doc.setFontSize(10);
-    doc.setTextColor(150, 150, 150);
-    doc.text(
-      `রিপোর্ট generated: ${new Date().toLocaleString("bn-BD")}`,
-      105,
-      doc.internal.pageSize.height - 10,
-      { align: "center" }
-    );
-  }
-
   // Save PDF
-  const fileName = `FarmingFamily_Inventory_${new Date().toISOString().split("T")[0]}.pdf`;
-  doc.save(fileName);
-
-  if (confirm("✅ PDF রিপোর্ট তৈরি হয়েছে!\nWhatsApp এ শেয়ার করবেন?")) {
-    shareInventoryWhatsApp();
-  }
+  doc.save(`Daily_Report_${new Date().toISOString().split("T")[0]}.pdf`);
 };
 
-// ========== SHARE VIA WHATSAPP ==========
 window.shareDailyWhatsApp = function () {
-  const sales = document.getElementById("dailyTotalSales").textContent;
-  const profit = document.getElementById("dailyNetProfit").textContent;
+  // Generate PDF and share via WhatsApp
+  generateDailyPDF();
+  // After PDF is generated, you can share it
+  // For now, we'll share a text summary
+  const text = `🏪 Farming Family Shop - দৈনিক রিপোর্ট
+📅 ${document.getElementById("dailyReportDate").textContent}
 
-  const text = `🏪 *Farming Family Shop - দৈনিক রিপোর্ট*
-📅 *তারিখ:* ${formatDate(new Date())}
+💰 লাভ/ক্ষতি:
+   শুরু: ${document.getElementById("dailyStartInv").textContent}
+   ক্রয়: ${document.getElementById("dailyPurchases").textContent}
+   বিক্রয়: ${document.getElementById("dailySales").textContent}
+   ক্ষতি: ${document.getElementById("dailyDamage").textContent}
+   খরচ: ${document.getElementById("dailyExpenses").textContent}
+   শেষ: ${document.getElementById("dailyEndInv").textContent}
+   ----------------------------------------
+   ✅ নিট লাভ: ${document.getElementById("dailyProfit").textContent}
 
-💰 *মোট বিক্রয়:* ${sales}
-📦 *মোট লেনদেন:* ${document.getElementById("dailyTransactions").textContent}
-💸 *মোট খরচ:* ${document.getElementById("dailyTotalExpenses").textContent}
-📈 *নিট মুনাফা:* ${profit}
+📊 বিক্রয়: ${document.getElementById("dailySalesCount").textContent}
+📦 ক্রয়: ${document.getElementById("dailyPurchases").textContent}
 
-🔗 *রিপোর্ট দেখুন:* ${window.location.origin}/reports.html
-🕐 *সময়:* ${new Date().toLocaleString("bn-BD")}`;
-
-  const encodedText = encodeURIComponent(text);
-  const whatsappUrl = `https://wa.me/?text=${encodedText}`;
-  window.open(whatsappUrl, "_blank");
-};
-
-window.shareMonthlyWhatsApp = function () {
-  const month = document.getElementById("monthSelector").value;
-  const year = document.getElementById("yearSelector").value;
-  const banglaMonths = [
-    "জানুয়ারি",
-    "ফেব্রুয়ারি",
-    "মার্চ",
-    "এপ্রিল",
-    "মে",
-    "জুন",
-    "জুলাই",
-    "আগস্ট",
-    "সেপ্টেম্বর",
-    "অক্টোবর",
-    "নভেম্বর",
-    "ডিসেম্বর"
-  ];
-
-  const sales = document.getElementById("monthlyTotalSales").textContent;
-  const profit = document.getElementById("monthlyNetProfit").textContent;
-
-  const text = `🏪 *Farming Family Shop - মাসিক রিপোর্ট*
-📅 *মাস:* ${banglaMonths[parseInt(month) - 1]} ${year}
-
-💰 *মোট বিক্রয়:* ${sales}
-📦 *মোট লেনদেন:* ${document.getElementById("monthlyTransactions").textContent}
-💸 *মোট খরচ:* ${document.getElementById("monthlyTotalExpenses").textContent}
-📈 *নিট মুনাফা:* ${profit}
-
-🔗 *রিপোর্ট দেখুন:* ${window.location.origin}/reports.html
-🕐 *সময়:* ${new Date().toLocaleString("bn-BD")}`;
+🔗 বিস্তারিত: ${window.location.origin}/reports.html`;
 
   const encodedText = encodeURIComponent(text);
-  const whatsappUrl = `https://wa.me/?text=${encodedText}`;
-  window.open(whatsappUrl, "_blank");
-};
-
-window.shareInventoryWhatsApp = function () {
-  const text = `🏪 *Farming Family Shop - ইনভেন্টরি রিপোর্ট*
-📅 *তারিখ:* ${formatDate(new Date())}
-
-📦 *মোট পণ্য:* ${document.getElementById("totalProducts").textContent} টি
-💰 *মোট মূল্য:* ${document.getElementById("totalStockValue").textContent}
-⚠️ *স্টক কম:* ${document.getElementById("lowStockItems").textContent} টি
-❌ *স্টক শেষ:* ${document.getElementById("outOfStockItems").textContent} টি
-
-🔗 *রিপোর্ট দেখুন:* ${window.location.origin}/reports.html
-🕐 *সময়:* ${new Date().toLocaleString("bn-BD")}`;
-
-  const encodedText = encodeURIComponent(text);
-  const whatsappUrl = `https://wa.me/?text=${encodedText}`;
-  window.open(whatsappUrl, "_blank");
-};
-
-// ========== VIEW DETAILED REPORTS ==========
-window.viewDailyReport = function () {
-  alert("দৈনিক রিপোর্টের বিস্তারিত শীঘ্রই আসছে...");
-};
-
-window.viewMonthlyReport = function () {
-  alert("মাসিক রিপোর্টের বিস্তারিত শীঘ্রই আসছে...");
-};
-
-window.viewInventoryReport = function () {
-  alert("ইনভেন্টরি রিপোর্টের বিস্তারিত শীঘ্রই আসছে...");
+  window.open(`https://wa.me/?text=${encodedText}`, "_blank");
 };
 
 // ========== INITIAL LOAD ==========
 document.addEventListener("DOMContentLoaded", function () {
   loadDailyReport();
-  loadMonthlyReport();
   loadInventoryReport();
+  loadMonthlyReport();
 });
 
 // ========== MAKE FUNCTIONS GLOBAL ==========
@@ -600,13 +726,6 @@ window.loadDailyReport = loadDailyReport;
 window.loadMonthlyReport = loadMonthlyReport;
 window.loadInventoryReport = loadInventoryReport;
 window.generateDailyPDF = generateDailyPDF;
-window.generateMonthlyPDF = generateMonthlyPDF;
-window.generateInventoryPDF = generateInventoryPDF;
 window.shareDailyWhatsApp = shareDailyWhatsApp;
-window.shareMonthlyWhatsApp = shareMonthlyWhatsApp;
-window.shareInventoryWhatsApp = shareInventoryWhatsApp;
-window.viewDailyReport = viewDailyReport;
-window.viewMonthlyReport = viewMonthlyReport;
-window.viewInventoryReport = viewInventoryReport;
 
-console.log("✅ Reports.js loaded successfully - PDF Generation Ready!");
+console.log("✅ Reports.js loaded with product-wise reports");
