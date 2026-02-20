@@ -728,4 +728,232 @@ window.loadInventoryReport = loadInventoryReport;
 window.generateDailyPDF = generateDailyPDF;
 window.shareDailyWhatsApp = shareDailyWhatsApp;
 
+// ========== GENERATE INVENTORY PDF ==========
+window.generateInventoryPDF = function () {
+  try {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    // Header
+    doc.setFillColor(102, 126, 234);
+    doc.rect(0, 0, 210, 30, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(18);
+    doc.setFont("helvetica", "bold");
+    doc.text("Farming Family Shop", 105, 15, { align: "center" });
+    doc.setFontSize(12);
+    doc.text("ইনভেন্টরি রিপোর্ট", 105, 25, { align: "center" });
+
+    // Date
+    doc.setTextColor(0, 0, 0);
+    const today = new Date();
+    const dateStr = today.toLocaleDateString("bn-BD", {
+      year: "numeric",
+      month: "long",
+      day: "numeric"
+    });
+    doc.text(`তারিখ: ${dateStr}`, 20, 40);
+
+    // Summary
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text("সারসংক্ষেপ", 20, 55);
+
+    const totalProducts = document.getElementById("totalProducts")?.textContent || "০";
+    const totalValue = document.getElementById("totalStockValue")?.textContent || "০";
+
+    doc.autoTable({
+      startY: 60,
+      body: [
+        ["মোট পণ্য", totalProducts + " টি"],
+        ["মোট মূল্য", totalValue]
+      ],
+      theme: "plain",
+      styles: { fontSize: 10 },
+      columnStyles: { 0: { cellWidth: 80 }, 1: { cellWidth: 60, halign: "right" } }
+    });
+
+    // Low Stock Table
+    const lowStockTable = document.getElementById("lowStockTable");
+    if (lowStockTable && lowStockTable.querySelector("tbody").children.length > 0) {
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.text("কম স্টক পণ্য", 20, doc.lastAutoTable.finalY + 15);
+
+      doc.autoTable({
+        startY: doc.lastAutoTable.finalY + 20,
+        html: "#lowStockTable",
+        theme: "striped",
+        styles: { fontSize: 9 },
+        headStyles: { fillColor: [255, 160, 0] }
+      });
+    }
+
+    // All Products Table
+    const allProductsTable = document.getElementById("allProductsTable");
+    if (allProductsTable && allProductsTable.querySelector("tbody").children.length > 0) {
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.text("সমস্ত পণ্যের তালিকা", 20, doc.lastAutoTable.finalY + 15);
+
+      doc.autoTable({
+        startY: doc.lastAutoTable.finalY + 20,
+        html: "#allProductsTable",
+        theme: "striped",
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [102, 126, 234] }
+      });
+    }
+
+    // Save PDF
+    const fileName = `Inventory_Report_${today.toISOString().split("T")[0]}.pdf`;
+    doc.save(fileName);
+    console.log("✅ Inventory PDF generated");
+  } catch (error) {
+    console.error("Inventory PDF error:", error);
+    alert("PDF জেনারেট করতে সমস্যা হয়েছে: " + error.message);
+  }
+};
+
+// ========== GENERATE MONTHLY PDF ==========
+window.generateMonthlyPDF = function () {
+  try {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    // Header
+    doc.setFillColor(102, 126, 234);
+    doc.rect(0, 0, 210, 30, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(18);
+    doc.setFont("helvetica", "bold");
+    doc.text("Farming Family Shop", 105, 15, { align: "center" });
+    doc.setFontSize(12);
+    doc.text("মাসিক রিপোর্ট", 105, 25, { align: "center" });
+
+    // Month/Year
+    doc.setTextColor(0, 0, 0);
+    const month = document.getElementById("monthSelector")?.value || "2";
+    const year = document.getElementById("yearSelector")?.value || "2026";
+    const banglaMonths = [
+      "জানুয়ারি",
+      "ফেব্রুয়ারি",
+      "মার্চ",
+      "এপ্রিল",
+      "মে",
+      "জুন",
+      "জুলাই",
+      "আগস্ট",
+      "সেপ্টেম্বর",
+      "অক্টোবর",
+      "নভেম্বর",
+      "ডিসেম্বর"
+    ];
+    const monthName = banglaMonths[parseInt(month) - 1];
+    doc.text(`মাস: ${monthName} ${year}`, 20, 40);
+
+    // Profit Summary
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text("লাভ/ক্ষতি হিসাব", 20, 55);
+
+    const summaryData = [
+      ["শুরুর ইনভেন্টরি", document.getElementById("monthlyStartInv")?.textContent || "০.০০"],
+      ["মোট ক্রয়", document.getElementById("monthlyPurchases")?.textContent || "০.০০"],
+      ["মোট বিক্রয়", document.getElementById("monthlySales")?.textContent || "০.০০"],
+      ["মোট ক্ষতি/মৃত্যু", document.getElementById("monthlyDamage")?.textContent || "০.০০"],
+      ["অন্যান্য খরচ", document.getElementById("monthlyExpenses")?.textContent || "০.০০"],
+      ["শেষ ইনভেন্টরি", document.getElementById("monthlyEndInv")?.textContent || "০.০০"],
+      ["নিট লাভ/ক্ষতি", document.getElementById("monthlyProfit")?.textContent || "০.০০"]
+    ];
+
+    doc.autoTable({
+      startY: 60,
+      body: summaryData,
+      theme: "plain",
+      styles: { fontSize: 10 },
+      columnStyles: { 0: { cellWidth: 80 }, 1: { cellWidth: 60, halign: "right" } }
+    });
+
+    // Monthly Sales Table
+    const salesTable = document.getElementById("monthlySalesTable");
+    if (salesTable && salesTable.querySelector("tbody").children.length > 0) {
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.text("মাসিক বিক্রয়", 20, doc.lastAutoTable.finalY + 15);
+
+      doc.autoTable({
+        startY: doc.lastAutoTable.finalY + 20,
+        html: "#monthlySalesTable",
+        theme: "striped",
+        styles: { fontSize: 9 },
+        headStyles: { fillColor: [0, 176, 155] }
+      });
+    }
+
+    // Save PDF
+    const fileName = `Monthly_Report_${year}_${month}.pdf`;
+    doc.save(fileName);
+    console.log("✅ Monthly PDF generated");
+  } catch (error) {
+    console.error("Monthly PDF error:", error);
+    alert("PDF জেনারেট করতে সমস্যা হয়েছে: " + error.message);
+  }
+};
+
+// ========== SHARE INVENTORY VIA WHATSAPP ==========
+window.shareInventoryWhatsApp = function () {
+  generateInventoryPDF();
+  const text = `🏪 Farming Family Shop - ইনভেন্টরি রিপোর্ট
+📅 ${new Date().toLocaleDateString("bn-BD")}
+
+📦 মোট পণ্য: ${document.getElementById("totalProducts")?.textContent || "০"}
+💰 মোট মূল্য: ${document.getElementById("totalStockValue")?.textContent || "০"}
+⚠️ কম স্টক: ${document.getElementById("lowStockCount")?.textContent || "০"}
+
+🔗 ${window.location.origin}`;
+
+  const encodedText = encodeURIComponent(text);
+  window.open(`https://wa.me/?text=${encodedText}`, "_blank");
+};
+
+// ========== SHARE MONTHLY VIA WHATSAPP ==========
+window.shareMonthlyWhatsApp = function () {
+  generateMonthlyPDF();
+  const month = document.getElementById("monthSelector")?.value || "2";
+  const year = document.getElementById("yearSelector")?.value || "2026";
+  const banglaMonths = [
+    "জানুয়ারি",
+    "ফেব্রুয়ারি",
+    "মার্চ",
+    "এপ্রিল",
+    "মে",
+    "জুন",
+    "জুলাই",
+    "আগস্ট",
+    "সেপ্টেম্বর",
+    "অক্টোবর",
+    "নভেম্বর",
+    "ডিসেম্বর"
+  ];
+
+  const text = `🏪 Farming Family Shop - মাসিক রিপোর্ট
+📅 ${banglaMonths[parseInt(month) - 1]} ${year}
+
+💰 বিক্রয়: ${document.getElementById("monthlySales")?.textContent || "০"}
+💸 খরচ: ${document.getElementById("monthlyExpenses")?.textContent || "০"}
+📈 লাভ: ${document.getElementById("monthlyProfit")?.textContent || "০"}
+
+🔗 ${window.location.origin}`;
+
+  const encodedText = encodeURIComponent(text);
+  window.open(`https://wa.me/?text=${encodedText}`, "_blank");
+};
+
+// ========== MAKE ALL FUNCTIONS GLOBAL ==========
+window.generateInventoryPDF = generateInventoryPDF;
+window.generateMonthlyPDF = generateMonthlyPDF;
+window.shareInventoryWhatsApp = shareInventoryWhatsApp;
+window.shareMonthlyWhatsApp = shareMonthlyWhatsApp;
+
 console.log("✅ Reports.js loaded with product-wise reports");
