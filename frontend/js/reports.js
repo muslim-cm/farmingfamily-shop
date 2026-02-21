@@ -956,4 +956,183 @@ window.generateMonthlyPDF = generateMonthlyPDF;
 window.shareInventoryWhatsApp = shareInventoryWhatsApp;
 window.shareMonthlyWhatsApp = shareMonthlyWhatsApp;
 
+// ========== LOAD CASH MOVEMENT REPORT ==========
+async function loadCashReport() {
+  const date = new Date().toISOString().split("T")[0];
+
+  try {
+    // Get cash summary for today
+    const response = await fetch(`${API_BASE}/cash-api/summary?date=${date}`);
+    const data = await response.json();
+
+    if (data.success) {
+      const summary = data.summary;
+
+      // Get current balance
+      const balanceRes = await fetch(`${API_BASE}/cash-api/balance`);
+      const balanceData = await balanceRes.json();
+
+      // Update date display
+      const today = new Date();
+      const banglaMonths = [
+        "জানুয়ারি",
+        "ফেব্রুয়ারি",
+        "মার্চ",
+        "এপ্রিল",
+        "মে",
+        "জুন",
+        "জুলাই",
+        "আগস্ট",
+        "সেপ্টেম্বর",
+        "অক্টোবর",
+        "নভেম্বর",
+        "ডিসেম্বর"
+      ];
+      document.getElementById("cashReportDate").innerHTML =
+        `${banglaMonths[today.getMonth()]} ${today.getDate()}, ${today.getFullYear()}`;
+
+      // Calculate start balance (end balance - net change)
+      const startBalance = balanceData.balance - summary.net_change;
+
+      // Update summary fields
+      document.getElementById("cashStartBalance").textContent = formatCurrency(startBalance);
+      document.getElementById("cashSales").textContent = formatCurrency(summary.total_sales || 0);
+      document.getElementById("cashOwnerIn").textContent = formatCurrency(
+        summary.owner_cash_in || 0
+      );
+      document.getElementById("cashEndBalance").textContent = formatCurrency(
+        balanceData.balance || 0
+      );
+
+      // These would come from your cash transactions table
+      // For now, we'll estimate or set to 0
+      document.getElementById("cashBankWithdraw").textContent = formatCurrency(0);
+      document.getElementById("cashMobileWithdraw").textContent = formatCurrency(0);
+      document.getElementById("cashPurchases").textContent = formatCurrency(
+        summary.total_purchases || 0
+      );
+      document.getElementById("cashExpenses").textContent = formatCurrency(
+        summary.total_expenses || 0
+      );
+      document.getElementById("cashOwnerOut").textContent = formatCurrency(
+        summary.owner_withdrawal || 0
+      );
+      document.getElementById("cashBankDeposit").textContent = formatCurrency(0);
+      document.getElementById("cashMobileDeposit").textContent = formatCurrency(0);
+    }
+  } catch (error) {
+    console.error("Error loading cash report:", error);
+  }
+}
+
+// ========== GENERATE CASH PDF ==========
+window.generateCashPDF = function () {
+  try {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    // Header
+    doc.setFillColor(245, 158, 11); // Orange color for cash
+    doc.rect(0, 0, 210, 30, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(18);
+    doc.setFont("helvetica", "bold");
+    doc.text("Farming Family Shop", 105, 15, { align: "center" });
+    doc.setFontSize(12);
+    doc.text("ক্যাশ মুভমেন্ট রিপোর্ট", 105, 25, { align: "center" });
+
+    // Date
+    doc.setTextColor(0, 0, 0);
+    const dateStr = document.getElementById("cashReportDate").textContent;
+    doc.text(`তারিখ: ${dateStr}`, 20, 40);
+
+    // Cash Summary
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text("ক্যাশ ব্যালেন্স সারসংক্ষেপ", 20, 55);
+
+    const summaryData = [
+      ["শুরুর ব্যালেন্স", document.getElementById("cashStartBalance").textContent],
+      ["মোট ইনকাম", ""],
+      ["├─ বিক্রয়", document.getElementById("cashSales").textContent],
+      ["├─ মালিকের টাকা যোগ", document.getElementById("cashOwnerIn").textContent],
+      ["├─ ব্যাংক থেকে তোলা", document.getElementById("cashBankWithdraw").textContent],
+      ["└─ মোবাইল থেকে তোলা", document.getElementById("cashMobileWithdraw").textContent],
+      ["মোট খরচ", ""],
+      ["├─ ক্রয় (পণ্য)", document.getElementById("cashPurchases").textContent],
+      ["├─ অন্যান্য খরচ", document.getElementById("cashExpenses").textContent],
+      ["├─ মালিকের টাকা উত্তোলন", document.getElementById("cashOwnerOut").textContent],
+      ["├─ ব্যাংকে জমা", document.getElementById("cashBankDeposit").textContent],
+      ["└─ মোবাইলে জমা", document.getElementById("cashMobileDeposit").textContent],
+      ["শেষ ব্যালেন্স", document.getElementById("cashEndBalance").textContent]
+    ];
+
+    doc.autoTable({
+      startY: 60,
+      body: summaryData,
+      theme: "plain",
+      styles: { fontSize: 9 },
+      columnStyles: { 0: { cellWidth: 120 }, 1: { cellWidth: 50, halign: "right" } }
+    });
+
+    // Save PDF
+    const fileName = `Cash_Report_${new Date().toISOString().split("T")[0]}.pdf`;
+    doc.save(fileName);
+  } catch (error) {
+    console.error("Cash PDF error:", error);
+    alert("PDF জেনারেট করতে সমস্যা হয়েছে: " + error.message);
+  }
+};
+
+// ========== SHARE CASH VIA WHATSAPP ==========
+window.shareCashWhatsApp = function () {
+  generateCashPDF();
+
+  const start = document.getElementById("cashStartBalance").textContent;
+  const sales = document.getElementById("cashSales").textContent;
+  const ownerIn = document.getElementById("cashOwnerIn").textContent;
+  const purchases = document.getElementById("cashPurchases").textContent;
+  const expenses = document.getElementById("cashExpenses").textContent;
+  const ownerOut = document.getElementById("cashOwnerOut").textContent;
+  const end = document.getElementById("cashEndBalance").textContent;
+
+  const text = `🏪 Farming Family Shop - ক্যাশ মুভমেন্ট রিপোর্ট
+📅 ${document.getElementById("cashReportDate").textContent}
+
+💰 শুরুর ব্যালেন্স: ${start}
+
+💵 মোট ইনকাম:
+   ├─ বিক্রয়: ${sales}
+   ├─ মালিকের টাকা যোগ: ${ownerIn}
+
+💸 মোট খরচ:
+   ├─ ক্রয়: ${purchases}
+   ├─ অন্যান্য খরচ: ${expenses}
+   ├─ মালিকের উত্তোলন: ${ownerOut}
+
+💵 শেষ ব্যালেন্স: ${end}
+
+🔗 বিস্তারিত: ${window.location.origin}/cash.html`;
+
+  const encodedText = encodeURIComponent(text);
+  window.open(`https://wa.me/?text=${encodedText}`, "_blank");
+};
+
+// Add to INITIAL LOAD function
+// Find the DOMContentLoaded event listener and add loadCashReport():
+
+// Update your existing DOMContentLoaded function to include:
+document.addEventListener("DOMContentLoaded", function () {
+  loadDailyReport();
+  loadInventoryReport();
+  loadMonthlyReport();
+  loadCashReport(); // ← ADD THIS LINE
+});
+
+// ========== MAKE FUNCTIONS GLOBAL ==========
+// Add these to your existing window exports
+window.loadCashReport = loadCashReport;
+window.generateCashPDF = generateCashPDF;
+window.shareCashWhatsApp = shareCashWhatsApp;
+
 console.log("✅ Reports.js loaded with product-wise reports");
