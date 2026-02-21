@@ -1,17 +1,14 @@
 [build]
   publish = "frontend"
 
-[build.environment]
-  NODE_VERSION = "18"
-
-# Redirect root to frontend/index.html
+# This ensures root URLs work
 [[redirects]]
   from = "/"
-  to = "/frontend/index.html"
+  to = "/index.html"
   status = 200
 
-# Handle all other paths
+# This handles direct file access
 [[redirects]]
   from = "/*"
-  to = "/frontend/:splat"
+  to = "/:splat"
   status = 200
