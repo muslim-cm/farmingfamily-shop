@@ -1,14 +1,14 @@
 [build]
   publish = "frontend"
 
-# Redirect root to index.html
+# This ensures /frontend/ paths work
+[[redirects]]
+  from = "/frontend/*"
+  to = "/:splat"
+  status = 200
+
+# Root redirect
 [[redirects]]
   from = "/"
   to = "/index.html"
-  status = 200
-
-# Handle all other paths - keep them as-is
-[[redirects]]
-  from = "/*"
-  to = "/:splat"
   status = 200
