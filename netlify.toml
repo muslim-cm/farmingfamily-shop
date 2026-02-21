@@ -4,6 +4,13 @@
 [build.environment]
   NODE_VERSION = "18"
 
+# Redirect root to frontend/index.html
+[[redirects]]
+  from = "/"
+  to = "/frontend/index.html"
+  status = 200
+
+# Handle all other paths
 [[redirects]]
   from = "/*"
   to = "/frontend/:splat"
