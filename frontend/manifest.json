@@ -2,7 +2,7 @@
   "name": "Farming Family Shop",
   "short_name": "Farming Family",
   "description": "দোকান ব্যবস্থাপনা অ্যাপ - Farming Family Shop",
-  "start_url": "/index.html",
+  "start_url": "/frontend/index.html",
   "display": "standalone",
   "background_color": "#667eea",
   "theme_color": "#764ba2",
