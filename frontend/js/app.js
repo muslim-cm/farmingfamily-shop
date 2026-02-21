@@ -388,4 +388,35 @@ window.offlineDB = {
   getDB: () => db
 };
 
-console.log("✅ App.js loaded with full offline support");
+// ========== SERVICE WORKER REGISTRATION ==========
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", function () {
+    navigator.serviceWorker
+      .register("/sw.js") // ← CHANGE THIS FROM "/frontend/sw.js"
+      .then(function (registration) {
+        console.log("✅ Service Worker registered");
+
+        // Check for updates
+        registration.addEventListener("updatefound", () => {
+          const newWorker = registration.installing;
+          console.log("🔄 New service worker installing...");
+
+          newWorker.addEventListener("statechange", () => {
+            if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
+              showNotification("অ্যাপ আপডেট হয়েছে। রিফ্রেশ করুন।", "info");
+            }
+          });
+        });
+      })
+      .catch(function (error) {
+        console.log("❌ Service Worker failed:", error);
+      });
+
+    // Listen for messages from service worker
+    navigator.serviceWorker.addEventListener("message", (event) => {
+      if (event.data.type === "SYNC_NOW") {
+        syncAllQueues();
+      }
+    });
+  });
+}
