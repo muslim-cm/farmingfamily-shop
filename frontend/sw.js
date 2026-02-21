@@ -1,10 +1,11 @@
 // ===========================================
-// FARMING FAMILY SHOP - SERVICE WORKER v5.0
-// COMPLETE FIXED VERSION
+// FARMING FAMILY SHOP - SERVICE WORKER v6.0
+// SIMPLIFIED - GUARANTEED TO WORK
 // ===========================================
 
-const CACHE_NAME = "farming-family-v5";
+const CACHE_NAME = "farming-family-v6";
 const urlsToCache = [
+  "/",
   "/index.html",
   "/dashboard.html",
   "/sales.html",
@@ -31,7 +32,7 @@ const urlsToCache = [
 
 // Install - Cache all files
 self.addEventListener("install", (event) => {
-  console.log("✅ Installing Service Worker v5.0...");
+  console.log("✅ Installing Service Worker v6.0...");
   event.waitUntil(
     caches
       .open(CACHE_NAME)
@@ -43,9 +44,9 @@ self.addEventListener("install", (event) => {
   );
 });
 
-// Activate - Clean old caches
+// Activate - Clean old caches and take control
 self.addEventListener("activate", (event) => {
-  console.log("✅ Activating Service Worker v5.0...");
+  console.log("✅ Activating Service Worker v6.0...");
   event.waitUntil(
     caches
       .keys()
@@ -59,58 +60,56 @@ self.addEventListener("activate", (event) => {
           })
         );
       })
-      .then(() => self.clients.claim())
+      .then(() => {
+        console.log("✅ Service Worker activated, taking control");
+        return self.clients.claim();
+      })
   );
 });
 
-// Fetch - Handle all requests
+// Fetch - SIMPLIFIED: Cache first, then network, then offline page
 self.addEventListener("fetch", (event) => {
   // Skip API calls
   if (event.request.url.includes("/functions/v1/")) {
     return;
   }
 
-  // For navigation requests (clicking links)
-  if (event.request.mode === "navigate") {
-    event.respondWith(
-      fetch(event.request).catch(() => {
-        console.log("📱 OFFLINE: Serving from cache");
-
-        // Try to find the page in cache
-        return caches.match(event.request).then((cachedResponse) => {
-          if (cachedResponse) {
-            console.log("✅ Found in cache");
-            return cachedResponse;
-          }
-
-          // If page not in cache, show offline page
-          console.log("⚠️ Page not cached, showing offline page");
-          return caches.match("/offline.html");
-        });
-      })
-    );
-    return;
-  }
-
-  // For all other requests (CSS, JS, images)
   event.respondWith(
-    caches.match(event.request).then((response) => {
-      if (response) {
-        return response;
+    caches.match(event.request).then((cachedResponse) => {
+      // Return cached response if found
+      if (cachedResponse) {
+        console.log("✅ Serving from cache:", event.request.url);
+        return cachedResponse;
       }
 
-      return fetch(event.request).then((response) => {
-        if (!response || response.status !== 200) {
-          return response;
-        }
+      // Otherwise fetch from network
+      console.log("🌐 Fetching from network:", event.request.url);
+      return fetch(event.request)
+        .then((networkResponse) => {
+          // Don't cache if not a valid response
+          if (!networkResponse || networkResponse.status !== 200) {
+            return networkResponse;
+          }
 
-        const responseToCache = response.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, responseToCache);
+          // Cache the response for next time
+          const responseToCache = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseToCache);
+          });
+
+          return networkResponse;
+        })
+        .catch((error) => {
+          console.log("❌ Fetch failed, serving offline page:", error);
+
+          // For navigation requests, serve offline page
+          if (event.request.mode === "navigate") {
+            return caches.match("/offline.html");
+          }
+
+          // For other requests, just fail
+          return new Response("Offline", { status: 503 });
         });
-
-        return response;
-      });
     })
   );
 });
