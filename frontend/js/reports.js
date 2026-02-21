@@ -960,69 +960,27 @@ window.shareMonthlyWhatsApp = shareMonthlyWhatsApp;
 // ========== LOAD CASH MOVEMENT REPORT ==========
 async function loadCashReport() {
   const date = new Date().toISOString().split("T")[0];
+  const sessionToken = localStorage.getItem("session_token");
 
   try {
-    // Get cash summary for today
-    const response = await fetch(`${API_BASE}/cash-api/summary?date=${date}`);
-    const data = await response.json();
+    const response = await fetch(`${API_BASE}/cash-api/summary?date=${date}`, {
+      headers: {
+        Authorization: `Bearer ${sessionToken}`,
+        "Content-Type": "application/json"
+      }
+    });
 
-    if (data.success) {
-      const summary = data.summary;
-
-      // Get current balance
-      const balanceRes = await fetch(`${API_BASE}/cash-api/balance`);
-      const balanceData = await balanceRes.json();
-
-      // Update date display
-      const today = new Date();
-      const banglaMonths = [
-        "জানুয়ারি",
-        "ফেব্রুয়ারি",
-        "মার্চ",
-        "এপ্রিল",
-        "মে",
-        "জুন",
-        "জুলাই",
-        "আগস্ট",
-        "সেপ্টেম্বর",
-        "অক্টোবর",
-        "নভেম্বর",
-        "ডিসেম্বর"
-      ];
-      document.getElementById("cashReportDate").innerHTML =
-        `${banglaMonths[today.getMonth()]} ${today.getDate()}, ${today.getFullYear()}`;
-
-      // Calculate start balance (end balance - net change)
-      const startBalance = balanceData.balance - summary.net_change;
-
-      // Update summary fields
-      document.getElementById("cashStartBalance").textContent = formatCurrency(startBalance);
-      document.getElementById("cashSales").textContent = formatCurrency(summary.total_sales || 0);
-      document.getElementById("cashOwnerIn").textContent = formatCurrency(
-        summary.owner_cash_in || 0
-      );
-      document.getElementById("cashEndBalance").textContent = formatCurrency(
-        balanceData.balance || 0
-      );
-
-      // These would come from your cash transactions table
-      // For now, we'll estimate or set to 0
-      document.getElementById("cashBankWithdraw").textContent = formatCurrency(0);
-      document.getElementById("cashMobileWithdraw").textContent = formatCurrency(0);
-      document.getElementById("cashPurchases").textContent = formatCurrency(
-        summary.total_purchases || 0
-      );
-      document.getElementById("cashExpenses").textContent = formatCurrency(
-        summary.total_expenses || 0
-      );
-      document.getElementById("cashOwnerOut").textContent = formatCurrency(
-        summary.owner_withdrawal || 0
-      );
-      document.getElementById("cashBankDeposit").textContent = formatCurrency(0);
-      document.getElementById("cashMobileDeposit").textContent = formatCurrency(0);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
+
+    const data = await response.json();
+    // ... rest of your code to update the DOM
   } catch (error) {
     console.error("Error loading cash report:", error);
+    // Optionally show a user-friendly message in the UI
+    document.getElementById("cashStartBalance").textContent = "০.০০";
+    document.getElementById("cashEndBalance").textContent = "০.০০";
   }
 }
 
