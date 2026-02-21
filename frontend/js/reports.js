@@ -719,6 +719,7 @@ document.addEventListener("DOMContentLoaded", function () {
   loadDailyReport();
   loadInventoryReport();
   loadMonthlyReport();
+  loadCashReport();
 });
 
 // ========== MAKE FUNCTIONS GLOBAL ==========
