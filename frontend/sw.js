@@ -1,9 +1,9 @@
 // ===========================================
-// FARMING FAMILY SHOP - SERVICE WORKER v6.0
-// SIMPLIFIED - GUARANTEED TO WORK
+// FARMING FAMILY SHOP - SERVICE WORKER v7.0
+// FORCE CACHE HTML FILES
 // ===========================================
 
-const CACHE_NAME = "farming-family-v6";
+const CACHE_NAME = "farming-family-v7";
 const urlsToCache = [
   "/",
   "/index.html",
@@ -30,23 +30,50 @@ const urlsToCache = [
   "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
 ];
 
-// Install - Cache all files
+// Install - Force cache ALL files including HTML
 self.addEventListener("install", (event) => {
-  console.log("✅ Installing Service Worker v6.0...");
+  console.log("✅ Installing Service Worker v7.0 with HTML files...");
   event.waitUntil(
     caches
       .open(CACHE_NAME)
       .then((cache) => {
-        console.log("✅ Caching app files...");
+        console.log("✅ Caching ALL files including HTML...");
         return cache.addAll(urlsToCache);
       })
-      .then(() => self.skipWaiting())
+      .then(() => {
+        console.log("✅ All files cached successfully!");
+        return self.skipWaiting();
+      })
+      .catch((error) => {
+        console.error("❌ Cache failed:", error);
+        // Try to cache one by one if bulk fails
+        return cacheFilesOneByOne();
+      })
   );
 });
 
-// Activate - Clean old caches and take control
+// Fallback: Cache files one by one
+async function cacheFilesOneByOne() {
+  const cache = await caches.open(CACHE_NAME);
+  let successCount = 0;
+
+  for (const url of urlsToCache) {
+    try {
+      await cache.add(url);
+      successCount++;
+      console.log(`✅ Cached: ${url}`);
+    } catch (error) {
+      console.error(`❌ Failed to cache: ${url}`);
+    }
+  }
+
+  console.log(`✅ Cached ${successCount}/${urlsToCache.length} files`);
+  self.skipWaiting();
+}
+
+// Activate - Clean old caches
 self.addEventListener("activate", (event) => {
-  console.log("✅ Activating Service Worker v6.0...");
+  console.log("✅ Activating Service Worker v7.0...");
   event.waitUntil(
     caches
       .keys()
@@ -61,55 +88,44 @@ self.addEventListener("activate", (event) => {
         );
       })
       .then(() => {
-        console.log("✅ Service Worker activated, taking control");
+        console.log("✅ Service Worker activated");
         return self.clients.claim();
       })
   );
 });
 
-// Fetch - SIMPLIFIED: Cache first, then network, then offline page
+// Fetch - Serve from cache first
 self.addEventListener("fetch", (event) => {
   // Skip API calls
   if (event.request.url.includes("/functions/v1/")) {
     return;
   }
 
-  event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      // Return cached response if found
-      if (cachedResponse) {
-        console.log("✅ Serving from cache:", event.request.url);
-        return cachedResponse;
-      }
-
-      // Otherwise fetch from network
-      console.log("🌐 Fetching from network:", event.request.url);
-      return fetch(event.request)
-        .then((networkResponse) => {
-          // Don't cache if not a valid response
-          if (!networkResponse || networkResponse.status !== 200) {
-            return networkResponse;
+  // For HTML navigation - CRITICAL
+  if (event.request.mode === "navigate") {
+    event.respondWith(
+      fetch(event.request).catch(() => {
+        console.log("📱 OFFLINE: Trying cache for navigation");
+        return caches.match(event.request).then((cachedResponse) => {
+          if (cachedResponse) {
+            console.log("✅ Found HTML in cache:", event.request.url);
+            return cachedResponse;
           }
-
-          // Cache the response for next time
-          const responseToCache = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseToCache);
-          });
-
-          return networkResponse;
-        })
-        .catch((error) => {
-          console.log("❌ Fetch failed, serving offline page:", error);
-
-          // For navigation requests, serve offline page
-          if (event.request.mode === "navigate") {
-            return caches.match("/offline.html");
-          }
-
-          // For other requests, just fail
-          return new Response("Offline", { status: 503 });
+          console.log("⚠️ HTML not cached, showing offline page");
+          return caches.match("/offline.html");
         });
+      })
+    );
+    return;
+  }
+
+  // For all other requests (CSS, JS, images)
+  event.respondWith(
+    caches.match(event.request).then((response) => {
+      if (response) {
+        return response;
+      }
+      return fetch(event.request);
     })
   );
 });
