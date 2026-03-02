@@ -1,6 +1,6 @@
 // ===========================================
 // FARMING FAMILY SHOP - SALES ENTRY
-// COMPLETE OFFLINE SUPPORT WITH INDEXEDDB
+// FIXED OFFLINE HANDLING
 // ===========================================
 
 const SUPABASE_URL = "https://vhdjqgwbeezmwllfbljp.supabase.co";
@@ -14,6 +14,7 @@ const currentUser = JSON.parse(userStr);
 let cart = [];
 let products = [];
 let db = null;
+let dbReady = false;
 
 // DOM Elements
 const productSearch = document.getElementById("productSearch");
@@ -28,35 +29,45 @@ const changeAmount = document.getElementById("changeAmount");
 const saveSaleBtn = document.getElementById("saveSaleBtn");
 
 // ========== OFFLINE DATABASE CONNECTION ==========
-async function getDB() {
-  if (db) return db;
-
+async function initOfflineDB() {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open("FarmingFamilyOffline", 2);
+    const request = indexedDB.open("FarmingFamilyOffline", 3);
 
-    request.onerror = () => reject(request.error);
+    request.onerror = () => {
+      console.error("❌ IndexedDB error:", request.error);
+      reject(request.error);
+    };
+
     request.onsuccess = () => {
       db = request.result;
+      dbReady = true;
+      console.log("✅ Offline database ready for sales");
       resolve(db);
     };
 
     request.onupgradeneeded = (event) => {
       const db = event.target.result;
 
+      // Create products store if not exists
       if (!db.objectStoreNames.contains("products")) {
         db.createObjectStore("products", { keyPath: "id" });
       }
 
+      // Create salesQueue store if not exists
       if (!db.objectStoreNames.contains("salesQueue")) {
         const store = db.createObjectStore("salesQueue", {
           keyPath: "localId",
           autoIncrement: true
         });
         store.createIndex("synced", "synced");
+        store.createIndex("createdAt", "createdAt");
       }
     };
   });
 }
+
+// Initialize database
+initOfflineDB().catch(console.error);
 
 // ========== OFFLINE MODE CHECK ==========
 function isOnline() {
@@ -71,7 +82,7 @@ function showOfflineMessage() {
     banner.id = "offline-banner";
     banner.innerHTML = `
       <i class="fas fa-wifi-slash"></i>
-      <span>আপনি অফলাইনে আছেন। পণ্য ক্যাশে থেকে দেখানো হচ্ছে।</span>
+      <span>আপনি অফলাইনে আছেন। ক্যাশে থেকে ডাটা দেখানো হচ্ছে।</span>
     `;
     banner.style.cssText = `
       background: #ff6b6b;
@@ -99,7 +110,7 @@ async function loadProducts() {
 
         // Cache products offline
         try {
-          const db = await getDB();
+          if (!dbReady) await initOfflineDB();
           const tx = db.transaction("products", "readwrite");
           const store = tx.objectStore("products");
           await store.clear();
@@ -112,6 +123,7 @@ async function loadProducts() {
           console.log("Cache error:", e);
         }
 
+        displaySearchResults(products);
         return;
       }
     } catch (error) {
@@ -121,7 +133,7 @@ async function loadProducts() {
 
   // Offline - load from cache
   try {
-    const db = await getDB();
+    if (!dbReady) await initOfflineDB();
     const tx = db.transaction("products", "readonly");
     const store = tx.objectStore("products");
     products = await store.getAll();
@@ -129,29 +141,31 @@ async function loadProducts() {
 
     if (products.length > 0) {
       showOfflineMessage();
+      displaySearchResults(products);
     } else {
-      // No cached products - show error
-      const content = document.querySelector(".content");
-      if (content) {
-        content.innerHTML = `
-          <div style="text-align:center; padding:40px; background:white; border-radius:15px;">
-            <i class="fas fa-wifi-slash" style="font-size:60px; color:#ff6b6b; margin-bottom:20px;"></i>
-            <h2 style="color:#333; margin-bottom:15px;">ইন্টারনেট সংযোগ নেই</h2>
-            <p style="color:#666; margin-bottom:20px;">আপনি অফলাইনে আছেন এবং কোন ক্যাশেড পণ্য নেই। অনলাইনে সংযুক্ত হয়ে আবার চেষ্টা করুন।</p>
-            <button onclick="location.reload()" style="background:#667eea; color:white; border:none; padding:12px 30px; border-radius:10px; font-size:16px;">
-              <i class="fas fa-redo-alt"></i> পুনরায় চেষ্টা করুন
-            </button>
-          </div>
-        `;
-      }
+      // No cached products - show friendly message
+      searchResults.innerHTML = `
+        <div style="text-align:center; padding:30px; background:white; border-radius:10px;">
+          <i class="fas fa-wifi-slash" style="font-size:40px; color:#ff6b6b; margin-bottom:10px;"></i>
+          <p style="color:#666;">অফলাইনে কোন পণ্য পাওয়া যায়নি। অনলাইনে সংযুক্ত হয়ে পণ্য লোড করুন।</p>
+        </div>
+      `;
     }
   } catch (error) {
     console.error("Error loading from cache:", error);
+    searchResults.innerHTML = `
+      <div style="text-align:center; padding:30px; background:white; border-radius:10px;">
+        <i class="fas fa-exclamation-triangle" style="font-size:40px; color:#ff6b6b; margin-bottom:10px;"></i>
+        <p style="color:#666;">পণ্য লোড করতে সমস্যা হয়েছে।</p>
+      </div>
+    `;
   }
 }
 
 // ========== SEARCH PRODUCTS ==========
 function searchProducts() {
+  if (!products || products.length === 0) return;
+
   const searchTerm = productSearch.value.toLowerCase();
   const category = categoryFilter.value;
 
@@ -179,11 +193,11 @@ function displaySearchResults(results) {
   }
 
   // Desktop header (hidden on mobile)
-  let html =
-    '<div class="product-row-header" style="display: grid; grid-template-columns: 2fr 1fr 1.2fr 1fr 0.8fr 1fr 0.8fr; gap: 10px; background: #667eea; color: white; padding: 12px 15px; border-radius: 10px; margin-bottom: 10px;">';
-  html +=
-    "<span>পণ্য</span><span>ইউনিট</span><span>ক্রয় মূল্য</span><span>বিক্রয় মূল্য</span><span>স্টক</span><span>পরিমাণ</span><span></span>";
-  html += "</div>";
+  let html = `
+    <div class="product-row-header" style="display: grid; grid-template-columns: 2fr 1fr 1.2fr 1fr 0.8fr 1fr 0.8fr; gap: 10px; background: #667eea; color: white; padding: 12px 15px; border-radius: 10px; margin-bottom: 10px;">
+      <span>পণ্য</span><span>ইউনিট</span><span>ক্রয় মূল্য</span><span>বিক্রয় মূল্য</span><span>স্টক</span><span>পরিমাণ</span><span></span>
+    </div>
+  `;
 
   results.forEach((product) => {
     const purchasePrice = product.purchase_price || 0;
@@ -193,32 +207,32 @@ function displaySearchResults(results) {
       product.current_quantity <= product.min_stock ? "স্টক কম" : `${product.current_quantity}`;
 
     html += `
-            <div class="product-row">
-                <div><strong>${product.name_bengali}</strong><br><small style="color:#666;">${product.name_english || ""}</small></div>
-                <div>
-                    <select id="unit_${product.id}" class="unit-select">
-                        ${getUnitOptions(product.available_units)}
-                    </select>
-                </div>
-                <div>
-                    <small style="color:#666;">ক্রয়: ${purchasePrice.toFixed(2)} টাকা</small>
-                    <br>
-                    <small style="color:#00b09b;">সুপারিশ: ${defaultPrice.toFixed(2)} টাকা</small>
-                </div>
-                <div>
-                    <input type="number" id="price_${product.id}" value="${defaultPrice.toFixed(2)}" min="0" step="0.05" style="padding:8px; border:2px solid #e0e0e0; border-radius:5px; width:100%;">
-                </div>
-                <div class="${stockStatus}">${stockText}</div>
-                <div>
-                    <input type="number" id="qty_${product.id}" min="0.10" step="0.10" value="1.00" style="padding:8px; border:2px solid #e0e0e0; border-radius:5px; width:100%;">
-                </div>
-                <div>
-                    <button onclick="addToCart('${product.id}')" style="background:#667eea; color:white; border:none; padding:10px; border-radius:5px; cursor:pointer; width:100%;">
-                        <i class="fas fa-cart-plus"></i>
-                    </button>
-                </div>
-            </div>
-        `;
+      <div class="product-row">
+        <div><strong>${product.name_bengali}</strong><br><small style="color:#666;">${product.name_english || ""}</small></div>
+        <div>
+          <select id="unit_${product.id}" class="unit-select">
+            ${getUnitOptions(product.available_units)}
+          </select>
+        </div>
+        <div>
+          <small style="color:#666;">ক্রয়: ${purchasePrice.toFixed(2)} টাকা</small>
+          <br>
+          <small style="color:#00b09b;">সুপারিশ: ${defaultPrice.toFixed(2)} টাকা</small>
+        </div>
+        <div>
+          <input type="number" id="price_${product.id}" value="${defaultPrice.toFixed(2)}" min="0" step="0.05" style="padding:8px; border:2px solid #e0e0e0; border-radius:5px; width:100%;">
+        </div>
+        <div class="${stockStatus}">${stockText}</div>
+        <div>
+          <input type="number" id="qty_${product.id}" min="0.10" step="0.10" value="1.00" style="padding:8px; border:2px solid #e0e0e0; border-radius:5px; width:100%;">
+        </div>
+        <div>
+          <button onclick="addToCart('${product.id}')" style="background:#667eea; color:white; border:none; padding:10px; border-radius:5px; cursor:pointer; width:100%;">
+            <i class="fas fa-cart-plus"></i>
+          </button>
+        </div>
+      </div>
+    `;
   });
 
   searchResults.innerHTML = html;
@@ -298,25 +312,23 @@ function displayCart() {
 
   cart.forEach((item, index) => {
     subtotal += item.total;
-    const profit = item.price - (item.purchase_price || 0);
-    const margin = item.purchase_price ? ((profit / item.purchase_price) * 100).toFixed(0) : "—";
 
     html += `
-            <div class="cart-item">
-                <div><strong>${item.name}</strong><br><small style="color:#666;">${item.qty.toFixed(2)} ${item.unit}</small></div>
-                <div>${item.baseQty.toFixed(2)}</div>
-                <div>${item.price.toFixed(2)}</div>
-                <div><strong>${item.total.toFixed(2)}</strong></div>
-                <div>
-                    <input type="number" id="discount_item_${index}" value="${item.discount.toFixed(2)}" min="0" step="0.05" style="width:70px; padding:5px; border:2px solid #e0e0e0; border-radius:5px;" onchange="updateItemDiscount(${index}, this.value)">
-                </div>
-                <div>
-                    <button class="btn-remove" onclick="removeFromCart(${index})">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-            </div>
-        `;
+      <div class="cart-item">
+        <div><strong>${item.name}</strong><br><small style="color:#666;">${item.qty.toFixed(2)} ${item.unit}</small></div>
+        <div>${item.baseQty.toFixed(2)}</div>
+        <div>${item.price.toFixed(2)}</div>
+        <div><strong>${item.total.toFixed(2)}</strong></div>
+        <div>
+          <input type="number" id="discount_item_${index}" value="${item.discount.toFixed(2)}" min="0" step="0.05" style="width:70px; padding:5px; border:2px solid #e0e0e0; border-radius:5px;" onchange="updateItemDiscount(${index}, this.value)">
+        </div>
+        <div>
+          <button class="btn-remove" onclick="removeFromCart(${index})">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+      </div>
+    `;
   });
 
   cartItems.innerHTML = html;
@@ -395,14 +407,24 @@ window.saveSale = async function () {
   };
 
   const btn = document.getElementById("saveSaleBtn");
+  const originalText = btn.innerHTML;
   btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> সংরক্ষণ হচ্ছে...';
   btn.disabled = true;
 
   // ========== OFFLINE MODE - QUEUE THE SALE ==========
   if (!isOnline()) {
     try {
-      const db = await getDB();
+      // Ensure database is ready
+      if (!dbReady) {
+        await initOfflineDB();
+      }
+
+      if (!db) {
+        throw new Error("ডাটাবেস প্রস্তুত নয়");
+      }
+
       const tx = db.transaction("salesQueue", "readwrite");
+      const store = tx.objectStore("salesQueue");
 
       const queueItem = {
         data: saleData,
@@ -411,29 +433,45 @@ window.saveSale = async function () {
         retryCount: 0
       };
 
-      const id = await tx.store.add(queueItem);
-      await tx.done;
+      // Use promise-based request
+      const request = store.add(queueItem);
 
-      alert(
-        "✅ বিক্রয় অফলাইনে সংরক্ষিত হয়েছে। ইন্টারনেট সংযুক্ত হলে স্বয়ংক্রিয়ভাবে সিঙ্ক হবে।"
-      );
+      request.onsuccess = function () {
+        console.log("✅ Sale queued offline with ID:", request.result);
 
-      // Clear cart
-      cart = [];
-      displayCart();
-      document.getElementById("customerName").value = "";
-      document.getElementById("customerPhone").value = "";
-      discountInput.value = "0.00";
-      cashReceived.value = "";
-      changeAmount.textContent = "0.00";
+        // Clear cart
+        cart = [];
+        displayCart();
+        document.getElementById("customerName").value = "";
+        document.getElementById("customerPhone").value = "";
+        discountInput.value = "0.00";
+        cashReceived.value = "";
+        changeAmount.textContent = "0.00";
 
-      btn.innerHTML = '<i class="fas fa-save"></i> বিক্রয় সংরক্ষণ করুন';
-      btn.disabled = false;
+        alert(
+          "✅ বিক্রয় অফলাইনে সংরক্ষিত হয়েছে। ইন্টারনেট সংযুক্ত হলে স্বয়ংক্রিয়ভাবে সিঙ্ক হবে।"
+        );
+
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+      };
+
+      request.onerror = function (event) {
+        console.error("❌ Queue error:", event.target.error);
+        alert(
+          "❌ অফলাইনে সংরক্ষণ করতে সমস্যা হয়েছে: " +
+            (event.target.error?.message || "অজানা ত্রুটি")
+        );
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+      };
+
+      // Don't proceed further - the callbacks will handle
       return;
     } catch (error) {
-      console.error("Queue error:", error);
-      alert("❌ অফলাইনে সংরক্ষণ করতে সমস্যা হয়েছে");
-      btn.innerHTML = '<i class="fas fa-save"></i> বিক্রয় সংরক্ষণ করুন';
+      console.error("❌ Queue error:", error);
+      alert("❌ অফলাইনে সংরক্ষণ করতে সমস্যা হয়েছে: " + error.message);
+      btn.innerHTML = originalText;
       btn.disabled = false;
       return;
     }
@@ -464,10 +502,16 @@ window.saveSale = async function () {
     }
   } catch (error) {
     // If online save fails (network error), queue it
-    if (!isOnline() || error.message.includes("network")) {
+    if (
+      !isOnline() ||
+      error.message.includes("network") ||
+      error.message.includes("Failed to fetch")
+    ) {
       try {
-        const db = await getDB();
+        if (!dbReady) await initOfflineDB();
+
         const tx = db.transaction("salesQueue", "readwrite");
+        const store = tx.objectStore("salesQueue");
 
         const queueItem = {
           data: saleData,
@@ -476,20 +520,25 @@ window.saveSale = async function () {
           retryCount: 0
         };
 
-        await tx.store.add(queueItem);
-        await tx.done;
+        const request = store.add(queueItem);
 
-        alert(
-          "✅ নেটওয়ার্ক সমস্যার কারণে বিক্রয় অফলাইনে সংরক্ষিত হয়েছে। পরে স্বয়ংক্রিয়ভাবে সিঙ্ক হবে।"
-        );
+        request.onsuccess = function () {
+          alert(
+            "✅ নেটওয়ার্ক সমস্যার কারণে বিক্রয় অফলাইনে সংরক্ষিত হয়েছে। পরে স্বয়ংক্রিয়ভাবে সিঙ্ক হবে।"
+          );
 
-        cart = [];
-        displayCart();
-        document.getElementById("customerName").value = "";
-        document.getElementById("customerPhone").value = "";
-        discountInput.value = "0.00";
-        cashReceived.value = "";
-        changeAmount.textContent = "0.00";
+          cart = [];
+          displayCart();
+          document.getElementById("customerName").value = "";
+          document.getElementById("customerPhone").value = "";
+          discountInput.value = "0.00";
+          cashReceived.value = "";
+          changeAmount.textContent = "0.00";
+        };
+
+        request.onerror = function () {
+          alert("❌ অফলাইনে সংরক্ষণ করতে সমস্যা হয়েছে");
+        };
       } catch (e) {
         alert("❌ ত্রুটি: " + error.message);
       }
@@ -497,7 +546,7 @@ window.saveSale = async function () {
       alert("❌ ত্রুটি: " + error.message);
     }
   } finally {
-    btn.innerHTML = '<i class="fas fa-save"></i> বিক্রয় সংরক্ষণ করুন';
+    btn.innerHTML = originalText;
     btn.disabled = false;
   }
 };
@@ -557,4 +606,4 @@ window.saveSale = saveSale;
 window.searchProducts = searchProducts;
 window.setDataLabels = setDataLabels;
 
-console.log("✅ Sales.js loaded with complete offline support");
+console.log("✅ Sales.js loaded with fixed offline support");
