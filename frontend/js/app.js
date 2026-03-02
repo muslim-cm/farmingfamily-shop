@@ -254,7 +254,7 @@ if (loginForm) {
         // Save user info
         localStorage.setItem("farming_user", JSON.stringify(data.user));
         localStorage.setItem("user", JSON.stringify(data.user));
-        localStorage.setItem("session_token", data.session_token);
+        localStorage.setItem("session_token",data.session_token);
 
         // Show success
         loginBtn.innerHTML = '<i class="fas fa-check"></i> সফল হয়েছে!';

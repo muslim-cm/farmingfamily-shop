@@ -1,3 +1,9 @@
+// Add this at the very top of reports.js
+window.addEventListener("error", function (e) {
+  console.log("Caught error:", e.error);
+  // Don't let errors break the page
+  e.preventDefault();
+});
 // ===========================================
 // FARMING FAMILY SHOP - REPORTS
 // UPDATED WITH PRODUCT-WISE TABLES AND PROFIT CALCULATION
