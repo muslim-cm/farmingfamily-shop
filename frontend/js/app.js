@@ -1,6 +1,7 @@
 // ===========================================
 // FARMING FAMILY SHOP - MAIN APP
 // COMPLETE OFFLINE SUPPORT WITH INDEXEDDB
+// UPDATED WITH DEBUG FUNCTIONS
 // ===========================================
 
 const SUPABASE_URL = "https://vhdjqgwbeezmwllfbljp.supabase.co";
@@ -11,7 +12,7 @@ let db;
 
 async function initOfflineDB() {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open("FarmingFamilyOffline", 2);
+    const request = indexedDB.open("FarmingFamilyOffline", 3); // Increased version number
 
     request.onerror = () => reject(request.error);
     request.onsuccess = () => {
@@ -22,12 +23,15 @@ async function initOfflineDB() {
 
     request.onupgradeneeded = (event) => {
       const db = event.target.result;
+      const oldVersion = event.oldVersion;
+      console.log(`🔄 Upgrading DB from version ${oldVersion} to ${event.newVersion}`);
 
       // Store products locally
       if (!db.objectStoreNames.contains("products")) {
         const store = db.createObjectStore("products", { keyPath: "id" });
         store.createIndex("category", "category");
         store.createIndex("name", "name_bengali");
+        console.log("✅ Created products store");
       }
 
       // Queue for unsynced sales
@@ -38,6 +42,7 @@ async function initOfflineDB() {
         });
         salesStore.createIndex("synced", "synced");
         salesStore.createIndex("createdAt", "createdAt");
+        console.log("✅ Created salesQueue store");
       }
 
       // Queue for unsynced purchases
@@ -47,6 +52,7 @@ async function initOfflineDB() {
           autoIncrement: true
         });
         purchaseStore.createIndex("synced", "synced");
+        console.log("✅ Created purchasesQueue store");
       }
 
       // Queue for unsynced expenses
@@ -56,6 +62,7 @@ async function initOfflineDB() {
           autoIncrement: true
         });
         expenseStore.createIndex("synced", "synced");
+        console.log("✅ Created expensesQueue store");
       }
 
       // Queue for stock adjustments (damage/death)
@@ -65,6 +72,7 @@ async function initOfflineDB() {
           autoIncrement: true
         });
         adjStore.createIndex("synced", "synced");
+        console.log("✅ Created adjustmentsQueue store");
       }
 
       console.log("✅ Offline database structure created");
@@ -254,7 +262,7 @@ if (loginForm) {
         // Save user info
         localStorage.setItem("farming_user", JSON.stringify(data.user));
         localStorage.setItem("user", JSON.stringify(data.user));
-        localStorage.setItem("session_token",data.session_token);
+        localStorage.setItem("session_token", data.session_token);
 
         // Show success
         loginBtn.innerHTML = '<i class="fas fa-check"></i> সফল হয়েছে!';
@@ -379,44 +387,65 @@ if ("serviceWorker" in navigator && "SyncManager" in window) {
   });
 }
 
+// ========== DEBUG OFFLINE DATABASE ==========
+window.checkOfflineDB = async function () {
+  try {
+    if (!db) await initOfflineDB();
+    console.log("✅ DB status:", db ? "Ready" : "Not ready");
+    console.log("✅ DB name:", db?.name);
+    console.log("✅ DB version:", db?.version);
+
+    // Check all stores
+    const stores = [
+      "products",
+      "salesQueue",
+      "purchasesQueue",
+      "expensesQueue",
+      "adjustmentsQueue"
+    ];
+    const results = {};
+
+    for (const storeName of stores) {
+      if (db.objectStoreNames.contains(storeName)) {
+        const tx = db.transaction(storeName, "readonly");
+        const store = tx.objectStore(storeName);
+        const count = await store.count();
+        console.log(`📊 ${storeName}: ${count} items`);
+        results[storeName] = count;
+      } else {
+        console.log(`❌ ${storeName}: Not found`);
+        results[storeName] = "Not found";
+      }
+    }
+
+    // Check localStorage
+    console.log("📦 localStorage:");
+    console.log(
+      "  - session_token:",
+      localStorage.getItem("session_token") ? "✅ Present" : "❌ Missing"
+    );
+    console.log("  - user:", localStorage.getItem("user") ? "✅ Present" : "❌ Missing");
+    console.log(
+      "  - farming_user:",
+      localStorage.getItem("farming_user") ? "✅ Present" : "❌ Missing"
+    );
+
+    return results;
+  } catch (error) {
+    console.error("❌ DB check error:", error);
+    return { error: error.message };
+  }
+};
+
 // ========== EXPORT FUNCTIONS FOR OTHER SCRIPTS ==========
 window.offlineDB = {
   cacheProducts,
   getCachedProducts,
   syncAllQueues,
   isOnline,
-  getDB: () => db
+  getDB: () => db,
+  checkDB: window.checkOfflineDB
 };
 
-// ========== SERVICE WORKER REGISTRATION ==========
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", function () {
-    navigator.serviceWorker
-      .register("/sw.js") // ← CHANGE THIS FROM "/frontend/sw.js"
-      .then(function (registration) {
-        console.log("✅ Service Worker registered");
-
-        // Check for updates
-        registration.addEventListener("updatefound", () => {
-          const newWorker = registration.installing;
-          console.log("🔄 New service worker installing...");
-
-          newWorker.addEventListener("statechange", () => {
-            if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
-              showNotification("অ্যাপ আপডেট হয়েছে। রিফ্রেশ করুন।", "info");
-            }
-          });
-        });
-      })
-      .catch(function (error) {
-        console.log("❌ Service Worker failed:", error);
-      });
-
-    // Listen for messages from service worker
-    navigator.serviceWorker.addEventListener("message", (event) => {
-      if (event.data.type === "SYNC_NOW") {
-        syncAllQueues();
-      }
-    });
-  });
-}
+console.log("✅ App.js loaded with full offline support");
+console.log("ℹ️ Type 'checkOfflineDB()' in console to check database status");
