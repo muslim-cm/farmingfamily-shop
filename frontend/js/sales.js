@@ -606,4 +606,8 @@ window.saveSale = saveSale;
 window.searchProducts = searchProducts;
 window.setDataLabels = setDataLabels;
 
+// Export database variables for debugging
+window.dbReady = dbReady;
+window.db = db;
+
 console.log("✅ Sales.js loaded with fixed offline support");
