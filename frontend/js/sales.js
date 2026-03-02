@@ -599,7 +599,6 @@ function debounce(func, wait) {
 loadProducts();
 
 // ========== GLOBAL FUNCTIONS ==========
-// Make sure everything is attached to window AFTER they are defined
 window.addToCart = addToCart;
 window.removeFromCart = removeFromCart;
 window.updateItemDiscount = updateItemDiscount;
@@ -607,22 +606,38 @@ window.saveSale = saveSale;
 window.searchProducts = searchProducts;
 window.setDataLabels = setDataLabels;
 
-// Export database variables for debugging (with a getter to ensure latest value)
+// Export database with getter to ensure latest value
 Object.defineProperty(window, "db", {
   get: function () {
     return db;
-  }
+  },
+  configurable: true
 });
 
 Object.defineProperty(window, "dbReady", {
   get: function () {
     return dbReady;
-  }
+  },
+  configurable: true
 });
 
-// Also export the database functions
+// Also export the database initialization function
 window.initOfflineDB = initOfflineDB;
 
-console.log("✅ Sales.js loaded with fixed offline support");
-console.log("ℹ️ Window.saveSale available:", !!window.saveSale);
-console.log("ℹ️ Window.db available:", !!window.db);
+// Log status
+console.log("✅ Sales.js loaded with globals");
+console.log("📊 db available:", !!db);
+console.log("📊 dbReady:", dbReady);
+console.log("ℹ️ You can now use window.saveSale(), window.db, etc.");
+
+// ========== EXPORT FOR OTHER SCRIPTS ==========
+// Make sure everything is available
+if (typeof window.offlineDB === "undefined") {
+  window.offlineDB = {};
+}
+window.offlineDB.getDB = function () {
+  return db;
+};
+window.offlineDB.isReady = function () {
+  return dbReady;
+};
