@@ -599,6 +599,7 @@ function debounce(func, wait) {
 loadProducts();
 
 // ========== GLOBAL FUNCTIONS ==========
+// Make sure everything is attached to window AFTER they are defined
 window.addToCart = addToCart;
 window.removeFromCart = removeFromCart;
 window.updateItemDiscount = updateItemDiscount;
@@ -606,8 +607,22 @@ window.saveSale = saveSale;
 window.searchProducts = searchProducts;
 window.setDataLabels = setDataLabels;
 
-// Export database variables for debugging
-window.dbReady = dbReady;
-window.db = db;
+// Export database variables for debugging (with a getter to ensure latest value)
+Object.defineProperty(window, "db", {
+  get: function () {
+    return db;
+  }
+});
+
+Object.defineProperty(window, "dbReady", {
+  get: function () {
+    return dbReady;
+  }
+});
+
+// Also export the database functions
+window.initOfflineDB = initOfflineDB;
 
 console.log("✅ Sales.js loaded with fixed offline support");
+console.log("ℹ️ Window.saveSale available:", !!window.saveSale);
+console.log("ℹ️ Window.db available:", !!window.db);
