@@ -1,6 +1,6 @@
 // ===========================================
 // FARMING FAMILY SHOP - SALES ENTRY
-// FIXED OFFLINE HANDLING
+// FIXED OFFLINE HANDLING + AUTO SYNC
 // ===========================================
 
 const SUPABASE_URL = "https://vhdjqgwbeezmwllfbljp.supabase.co";
@@ -97,6 +97,115 @@ function showOfflineMessage() {
   }
 }
 
+// ========== HELPERS FOR OFFLINE SALES QUEUE ==========
+async function ensureDB() {
+  if (!dbReady) {
+    await initOfflineDB();
+  }
+  if (!db) {
+    throw new Error("ডাটাবেস প্রস্তুত নয়");
+  }
+}
+
+async function saveSaleOffline(saleData, messageForUser) {
+  await ensureDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction("salesQueue", "readwrite");
+    const store = tx.objectStore("salesQueue");
+
+    const queueItem = {
+      data: saleData,
+      synced: false,
+      createdAt: new Date().toISOString(),
+      retryCount: 0
+    };
+
+    const request = store.add(queueItem);
+
+    request.onsuccess = function () {
+      console.log("✅ Sale queued offline with ID:", request.result);
+
+      // Clear cart and form
+      cart = [];
+      displayCart();
+      document.getElementById("customerName").value = "";
+      document.getElementById("customerPhone").value = "";
+      discountInput.value = "0.00";
+      cashReceived.value = "";
+      changeAmount.textContent = "0.00";
+
+      if (messageForUser) {
+        alert(messageForUser);
+      }
+
+      resolve(true);
+    };
+
+    request.onerror = function (event) {
+      console.error("❌ Queue error:", event.target.error);
+      alert(
+        "❌ অফলাইনে সংরক্ষণ করতে সমস্যা হয়েছে: " + (event.target.error?.message || "অজানা ত্রুটি")
+      );
+      reject(event.target.error);
+    };
+  });
+}
+
+// Auto‑sync offline sales when online
+async function syncOfflineSales() {
+  try {
+    if (!isOnline()) return;
+    await ensureDB();
+
+    const tx = db.transaction("salesQueue", "readwrite");
+    const store = tx.objectStore("salesQueue");
+    const getAllReq = store.getAll();
+
+    getAllReq.onsuccess = async () => {
+      const queued = getAllReq.result || [];
+      if (!queued.length) {
+        console.log("ℹ️ No offline sales to sync");
+        return;
+      }
+
+      console.log("🔄 Trying to sync offline sales:", queued.length);
+
+      for (const sale of queued) {
+        if (sale.synced) continue;
+        try {
+          const res = await fetch(`${API_BASE}/sales-api/sales`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(sale.data)
+          });
+          const data = await res.json();
+
+          if (data.success) {
+            console.log("✅ Synced offline sale:", sale.localId);
+            const delTx = db.transaction("salesQueue", "readwrite");
+            const delStore = delTx.objectStore("salesQueue");
+            delStore.delete(sale.localId);
+          } else {
+            console.warn("⚠️ Failed to sync sale:", sale.localId, data.error);
+          }
+        } catch (err) {
+          console.error("❌ Network error while syncing:", err);
+          // Stop loop on network failure; will retry next time
+          break;
+        }
+      }
+    };
+  } catch (err) {
+    console.error("❌ Error in syncOfflineSales:", err);
+  }
+}
+
+// Listen for coming online and try sync
+window.addEventListener("online", () => {
+  console.log("🌐 Online detected – syncing offline sales");
+  syncOfflineSales();
+});
+
 // ========== LOAD PRODUCTS (OFFLINE-FIRST) ==========
 async function loadProducts() {
   // Try online first
@@ -110,14 +219,11 @@ async function loadProducts() {
 
         // Cache products offline
         try {
-          if (!dbReady) await initOfflineDB();
+          await ensureDB();
           const tx = db.transaction("products", "readwrite");
           const store = tx.objectStore("products");
-          await store.clear();
-          for (const product of products) {
-            await store.put(product);
-          }
-          await tx.done;
+          store.clear();
+          products.forEach((product) => store.put(product));
           console.log("✅ Products cached offline");
         } catch (e) {
           console.log("Cache error:", e);
@@ -133,24 +239,38 @@ async function loadProducts() {
 
   // Offline - load from cache
   try {
-    if (!dbReady) await initOfflineDB();
+    await ensureDB();
     const tx = db.transaction("products", "readonly");
     const store = tx.objectStore("products");
-    products = await store.getAll();
-    console.log("✅ Products loaded from cache:", products.length);
+    const getAllReq = store.getAll();
 
-    if (products.length > 0) {
-      showOfflineMessage();
-      displaySearchResults(products);
-    } else {
-      // No cached products - show friendly message
+    getAllReq.onsuccess = function () {
+      products = getAllReq.result || [];
+      console.log("✅ Products loaded from cache:", products.length);
+
+      if (products.length > 0) {
+        showOfflineMessage();
+        displaySearchResults(products);
+      } else {
+        // No cached products - show friendly message
+        searchResults.innerHTML = `
+          <div style="text-align:center; padding:30px; background:white; border-radius:10px;">
+            <i class="fas fa-wifi-slash" style="font-size:40px; color:#ff6b6b; margin-bottom:10px;"></i>
+            <p style="color:#666;">অফলাইনে কোন পণ্য পাওয়া যায়নি। অনলাইনে সংযুক্ত হয়ে পণ্য লোড করুন।</p>
+          </div>
+        `;
+      }
+    };
+
+    getAllReq.onerror = function (event) {
+      console.error("Error loading from cache:", event.target.error);
       searchResults.innerHTML = `
         <div style="text-align:center; padding:30px; background:white; border-radius:10px;">
-          <i class="fas fa-wifi-slash" style="font-size:40px; color:#ff6b6b; margin-bottom:10px;"></i>
-          <p style="color:#666;">অফলাইনে কোন পণ্য পাওয়া যায়নি। অনলাইনে সংযুক্ত হয়ে পণ্য লোড করুন।</p>
+          <i class="fas fa-exclamation-triangle" style="font-size:40px; color:#ff6b6b; margin-bottom:10px;"></i>
+          <p style="color:#666;">পণ্য লোড করতে সমস্যা হয়েছে।</p>
         </div>
       `;
-    }
+    };
   } catch (error) {
     console.error("Error loading from cache:", error);
     searchResults.innerHTML = `
@@ -411,73 +531,24 @@ window.saveSale = async function () {
   btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> সংরক্ষণ হচ্ছে...';
   btn.disabled = true;
 
-  // ========== OFFLINE MODE - QUEUE THE SALE ==========
+  // OFFLINE: directly queue without blocking
   if (!isOnline()) {
     try {
-      // Ensure database is ready
-      if (!dbReady) {
-        await initOfflineDB();
-      }
-
-      if (!db) {
-        throw new Error("ডাটাবেস প্রস্তুত নয়");
-      }
-
-      const tx = db.transaction("salesQueue", "readwrite");
-      const store = tx.objectStore("salesQueue");
-
-      const queueItem = {
-        data: saleData,
-        synced: false,
-        createdAt: new Date().toISOString(),
-        retryCount: 0
-      };
-
-      // Use promise-based request
-      const request = store.add(queueItem);
-
-      request.onsuccess = function () {
-        console.log("✅ Sale queued offline with ID:", request.result);
-
-        // Clear cart
-        cart = [];
-        displayCart();
-        document.getElementById("customerName").value = "";
-        document.getElementById("customerPhone").value = "";
-        discountInput.value = "0.00";
-        cashReceived.value = "";
-        changeAmount.textContent = "0.00";
-
-        alert(
-          "✅ বিক্রয় অফলাইনে সংরক্ষিত হয়েছে। ইন্টারনেট সংযুক্ত হলে স্বয়ংক্রিয়ভাবে সিঙ্ক হবে।"
-        );
-
-        btn.innerHTML = originalText;
-        btn.disabled = false;
-      };
-
-      request.onerror = function (event) {
-        console.error("❌ Queue error:", event.target.error);
-        alert(
-          "❌ অফলাইনে সংরক্ষণ করতে সমস্যা হয়েছে: " +
-            (event.target.error?.message || "অজানা ত্রুটি")
-        );
-        btn.innerHTML = originalText;
-        btn.disabled = false;
-      };
-
-      // Don't proceed further - the callbacks will handle
-      return;
-    } catch (error) {
-      console.error("❌ Queue error:", error);
-      alert("❌ অফলাইনে সংরক্ষণ করতে সমস্যা হয়েছে: " + error.message);
+      showOfflineMessage();
+      await saveSaleOffline(
+        saleData,
+        "✅ বিক্রয় অফলাইনে সংরক্ষিত হয়েছে। ইন্টারনেট সংযুক্ত হলে স্বয়ংক্রিয়ভাবে সিঙ্ক হবে।"
+      );
+    } catch (err) {
+      console.error("❌ Queue error:", err);
+    } finally {
       btn.innerHTML = originalText;
       btn.disabled = false;
-      return;
     }
+    return;
   }
 
-  // ========== ONLINE MODE - NORMAL SAVE ==========
+  // ONLINE: try normal save, fall back to offline queue on failure
   try {
     const response = await fetch(`${API_BASE}/sales-api/sales`, {
       method: "POST",
@@ -498,51 +569,16 @@ window.saveSale = async function () {
       changeAmount.textContent = "0.00";
       await loadProducts(); // Refresh stock levels
     } else {
-      throw new Error(data.error);
+      throw new Error(data.error || "বিক্রয় সংরক্ষণ ব্যর্থ");
     }
   } catch (error) {
-    // If online save fails (network error), queue it
-    if (
-      !isOnline() ||
-      error.message.includes("network") ||
-      error.message.includes("Failed to fetch")
-    ) {
-      try {
-        if (!dbReady) await initOfflineDB();
-
-        const tx = db.transaction("salesQueue", "readwrite");
-        const store = tx.objectStore("salesQueue");
-
-        const queueItem = {
-          data: saleData,
-          synced: false,
-          createdAt: new Date().toISOString(),
-          retryCount: 0
-        };
-
-        const request = store.add(queueItem);
-
-        request.onsuccess = function () {
-          alert(
-            "✅ নেটওয়ার্ক সমস্যার কারণে বিক্রয় অফলাইনে সংরক্ষিত হয়েছে। পরে স্বয়ংক্রিয়ভাবে সিঙ্ক হবে।"
-          );
-
-          cart = [];
-          displayCart();
-          document.getElementById("customerName").value = "";
-          document.getElementById("customerPhone").value = "";
-          discountInput.value = "0.00";
-          cashReceived.value = "";
-          changeAmount.textContent = "0.00";
-        };
-
-        request.onerror = function () {
-          alert("❌ অফলাইনে সংরক্ষণ করতে সমস্যা হয়েছে");
-        };
-      } catch (e) {
-        alert("❌ ত্রুটি: " + error.message);
-      }
-    } else {
+    console.warn("⚠️ Online save failed, queuing offline:", error.message);
+    try {
+      await saveSaleOffline(
+        saleData,
+        "✅ নেটওয়ার্ক সমস্যার কারণে বিক্রয় অফলাইনে সংরক্ষিত হয়েছে। পরে স্বয়ংক্রিয়ভাবে সিঙ্ক হবে।"
+      );
+    } catch (e) {
       alert("❌ ত্রুটি: " + error.message);
     }
   } finally {
@@ -596,7 +632,13 @@ function debounce(func, wait) {
 }
 
 // ========== INITIAL LOAD ==========
-loadProducts();
+document.addEventListener("DOMContentLoaded", () => {
+  loadProducts();
+  // Try to sync any pending offline sales on load
+  if (isOnline()) {
+    syncOfflineSales();
+  }
+});
 
 // ========== GLOBAL FUNCTIONS ==========
 window.addToCart = addToCart;
@@ -631,7 +673,6 @@ console.log("📊 dbReady:", dbReady);
 console.log("ℹ️ You can now use window.saveSale(), window.db, etc.");
 
 // ========== EXPORT FOR OTHER SCRIPTS ==========
-// Make sure everything is available
 if (typeof window.offlineDB === "undefined") {
   window.offlineDB = {};
 }
