@@ -585,7 +585,11 @@
     </div>
 
     <!-- ===== LOAD SALES.JS FIRST ===== -->
-    <script src="js/sales.js"></script>
+    <script
+      src="js/sales.js"
+      onload="console.log('✅ sales.js loaded')"
+      onerror="console.error('❌ sales.js failed to load')"
+    ></script>
 
     <!-- Role Based UI Script - SAFE VERSION -->
     <script>
