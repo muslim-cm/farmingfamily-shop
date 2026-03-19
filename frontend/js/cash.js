@@ -274,4 +274,5 @@ loadBalance();
 loadTodayTransactions();
 loadRecentTransactions();
 
-console.log("✅ Cash.js
+console.log("✅ Cash.js);
+  <script src="js/cash.js"></script>

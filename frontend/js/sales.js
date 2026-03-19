@@ -682,3 +682,4 @@ window.offlineDB.getDB = function () {
 window.offlineDB.isReady = function () {
   return dbReady;
 };
+<script src="js/sales.js"></script>;

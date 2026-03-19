@@ -1101,3 +1101,4 @@ window.generateCashPDF = generateCashPDF;
 window.shareCashWhatsApp = shareCashWhatsApp;
 
 console.log("✅ Reports.js loaded with product-wise reports");
+<script src="js/reports.js"></script>;
