@@ -88,11 +88,40 @@ function isOnline() {
   return navigator.onLine;
 }
 
-window.addEventListener("online", () => {
-  console.log("✅ App is online - syncing...");
+window.addEventListener("online", async () => {
+  console.log("✅ App is online - syncing and updating cache...");
   document.body.classList.remove("offline-mode");
   showNotification("অনলাইনে সংযুক্ত হয়েছে", "success");
-  syncAllQueues();
+
+  // Sync any pending queues
+  await syncAllQueues();
+
+  // Update products cache if needed
+  try {
+    const response = await fetch(`${API_BASE}/products-api/products`);
+    const data = await response.json();
+
+    if (data.success) {
+      // Check if we need to update
+      const currentCache = await getCachedProducts();
+
+      // Simple version check - you can make this smarter
+      if (currentCache.length !== data.data.length) {
+        console.log("📦 Products changed, updating cache...");
+        await cacheProducts(data.data);
+        showNotification("পণ্যের তালিকা আপডেট করা হয়েছে", "success");
+
+        // If products page is open, refresh it
+        if (window.location.pathname.includes("products.html")) {
+          window.loadProducts();
+        }
+      } else {
+        console.log("📦 Products cache is up to date");
+      }
+    }
+  } catch (error) {
+    console.error("❌ Failed to update products cache:", error);
+  }
 });
 
 window.addEventListener("offline", () => {
@@ -449,3 +478,4 @@ window.offlineDB = {
 
 console.log("✅ App.js loaded with full offline support");
 console.log("ℹ️ Type 'checkOfflineDB()' in console to check database status");
+<script src="js/app.js"></script>;
