@@ -492,5 +492,13 @@
         }
       })();
     </script>
+    <script>
+      // Force sidebar visible on screens wider than 768px
+      (function () {
+        if (window.innerWidth > 768) {
+          document.querySelector(".sidebar").style.left = "0";
+        }
+      })();
+    </script>
   </body>
 </html>
