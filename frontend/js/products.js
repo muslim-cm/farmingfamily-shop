@@ -171,20 +171,24 @@ if (!onlineSuccess) {
   try {
     let products = [];
 
-    // Direct IndexedDB access (no version) — proven to work
-    const db = await new Promise((resolve, reject) => {
-      const req = indexedDB.open('FarmingFamilyOffline');
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = reject;
-    });
-
-    const tx = db.transaction('products', 'readonly');
-    const store = tx.objectStore('products');
-    products = await new Promise((resolve, reject) => {
-      const req = store.getAll();
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = reject;
-    });
+    // Use the global offlineDB object (from app.js) if available
+    if (window.offlineDB && typeof window.offlineDB.getCachedProducts === 'function') {
+      products = await window.offlineDB.getCachedProducts();
+    } else {
+      // Fallback: direct IndexedDB access
+      const db = await new Promise((resolve, reject) => {
+        const req = indexedDB.open('FarmingFamilyOffline');
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = reject;
+      });
+      const tx = db.transaction('products', 'readonly');
+      const store = tx.objectStore('products');
+      products = await new Promise((resolve, reject) => {
+        const req = store.getAll();
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = reject;
+      });
+    }
 
     // Apply search filter if needed
     if (searchTerm) {

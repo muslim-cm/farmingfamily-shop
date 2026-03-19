@@ -12,3 +12,10 @@
   from = "/"
   to = "/index.html"
   status = 200
+
+  # Service worker headers - IMPORTANT for updates
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache"
+    Content-Type = "application/javascript"
