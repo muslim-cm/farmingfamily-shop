@@ -429,5 +429,68 @@
 
     <script src="js/cash.js"></script>
     <script src="js/app.js"></script>
+    <!-- Role Based UI Script -->
+    <script>
+      (function () {
+        const userStr = localStorage.getItem("farming_user") || localStorage.getItem("user");
+        if (!userStr) {
+          window.location.href = "index.html";
+          return;
+        }
+
+        const user = JSON.parse(userStr);
+
+        // Update user name and role
+        const userNameEl = document.getElementById("userName");
+        if (userNameEl) userNameEl.textContent = user.full_name || user.username;
+
+        const userRoleEl = document.querySelector(".user-role");
+        if (userRoleEl) {
+          const roleText =
+            user.role === "owner"
+              ? "👑 মালিক"
+              : user.role === "manager"
+                ? "🟡 ব্যবস্থাপক"
+                : "🔵 ক্যাশিয়ার";
+          userRoleEl.textContent = roleText;
+        }
+
+        // Role-based menu visibility
+        const menuItems = document.querySelectorAll(".sidebar-nav li");
+        menuItems.forEach((item) => (item.style.display = "block"));
+
+        if (user.role === "cashier") {
+          menuItems.forEach((item) => {
+            const link = item.querySelector("a");
+            if (link) {
+              const href = link.getAttribute("href") || "";
+              if (!href.includes("sales.html") && !item.classList.contains("logout")) {
+                item.style.display = "none";
+              }
+            }
+          });
+        }
+
+        // Logout
+        const logoutBtn = document.getElementById("logoutBtn");
+        if (logoutBtn) {
+          logoutBtn.addEventListener("click", function (e) {
+            e.preventDefault();
+            localStorage.removeItem("farming_user");
+            localStorage.removeItem("user");
+            window.location.href = "index.html";
+          });
+        }
+
+        // Mobile menu toggle
+        const menuToggle = document.getElementById("menuToggle");
+        const sidebar = document.getElementById("sidebar");
+        if (menuToggle && sidebar) {
+          menuToggle.addEventListener("click", function () {
+            sidebar.classList.toggle("active");
+          });
+        }
+      })();
+    </script>
   </body>
 </html>
