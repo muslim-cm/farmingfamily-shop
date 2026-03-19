@@ -1,23 +1,24 @@
 <script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', function() {
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
       function registerSW(retries = 3) {
-        navigator.serviceWorker.register('/sw.js')
-          .then(reg => {
-            console.log('✅ Service Worker registered:', reg);
+        navigator.serviceWorker
+          .register("/sw.js")
+          .then((reg) => {
+            console.log("✅ Service Worker registered:", reg);
             // Check for updates
-            reg.addEventListener('updatefound', () => {
+            reg.addEventListener("updatefound", () => {
               const newWorker = reg.installing;
-              newWorker.addEventListener('statechange', () => {
-                if (newWorker.state === 'activated' && navigator.serviceWorker.controller) {
-                  console.log('🔄 New service worker activated – reloading...');
+              newWorker.addEventListener("statechange", () => {
+                if (newWorker.state === "activated" && navigator.serviceWorker.controller) {
+                  console.log("🔄 New service worker activated – reloading...");
                   window.location.reload();
                 }
               });
             });
           })
-          .catch(err => {
-            console.error('❌ Service Worker registration failed:', err);
+          .catch((err) => {
+            console.error("❌ Service Worker registration failed:", err);
             if (retries > 0) {
               console.log(`Retrying... (${retries} left)`);
               setTimeout(() => registerSW(retries - 1), 3000);
@@ -390,6 +391,18 @@
               <a href="expenses.html">
                 <i class="fas fa-arrow-down"></i>
                 <span>খরচ ও ক্রয়</span>
+              </a>
+            </li>
+            <li>
+              <a href="cash.html">
+                <i class="fas fa-coins"></i>
+                <span>ক্যাশ</span>
+              </a>
+            </li>
+            <li>
+              <a href="reports.html">
+                <i class="fas fa-chart-bar"></i>
+                <span>রিপোর্ট</span>
               </a>
             </li>
             <li>
