@@ -288,4 +288,3 @@ window.loadTodayTransactions = loadTodayTransactions;
 window.loadRecentTransactions = loadRecentTransactions;
 
 console.log("✅ Cash.js loaded successfully");
-<script src="js/cash.js"></script>;
