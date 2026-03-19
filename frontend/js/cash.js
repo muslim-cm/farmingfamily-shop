@@ -168,7 +168,7 @@ async function loadRecentTransactions() {
 // Modal functions
 let currentModalType = '';
 
-window.openModal = function(type) {
+function openModal(type) {
     currentModalType = type;
     const modal = document.getElementById('transactionModal');
     const title = document.getElementById('modalTitle');
@@ -197,7 +197,7 @@ window.openModal = function(type) {
     modal.classList.add('active');
 }
 
-window.closeModal = function() {
+function closeModal() {
     document.getElementById('transactionModal').classList.remove('active');
     document.getElementById('transactionForm').reset();
 }
@@ -274,5 +274,11 @@ loadBalance();
 loadTodayTransactions();
 loadRecentTransactions();
 
-console.log("✅ Cash.js);
-  <script src="js/cash.js"></script>
+// Make functions global for HTML buttons
+window.openModal = openModal;
+window.closeModal = closeModal;
+window.loadBalance = loadBalance;
+window.loadTodayTransactions = loadTodayTransactions;
+window.loadRecentTransactions = loadRecentTransactions;
+
+console.log("✅ Cash.js loaded successfully");
