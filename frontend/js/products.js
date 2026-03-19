@@ -143,29 +143,31 @@ async function loadProducts(searchTerm = "") {
 
   let products = [];
 
-  // Try online first
-  if (isOnline()) {
-    try {
-      let url = `${API_BASE}/products-api/products`;
-      if (searchTerm) {
-        url += `?search=${encodeURIComponent(searchTerm)}`;
-      }
-
-      const response = await fetch(url);
-      const data = await response.json();
-
-      if (data.success) {
-        products = data.data;
-        await cacheProducts(products);
-        displayProducts(products);
-        return;
-      }
-    } catch (error) {
-      console.log("Online fetch failed, loading from cache...");
+ // Try online first
+let onlineSuccess = false;
+if (isOnline()) {
+  try {
+    let url = `${API_BASE}/products-api/products`;
+    if (searchTerm) {
+      url += `?search=${encodeURIComponent(searchTerm)}`;
     }
-  }
 
-  // Offline - load from cache
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (data.success) {
+      products = data.data;
+      await cacheProducts(products);
+      displayProducts(products);
+      onlineSuccess = true;
+    }
+  } catch (error) {
+    console.log("Online fetch failed, loading from cache...");
+  }
+}
+
+// If online fetch failed or there was an error, load from cache
+if (!onlineSuccess) {
   try {
     const db = await getDB();
     const tx = db.transaction("products", "readonly");
@@ -714,3 +716,4 @@ window.loadProducts = loadProducts;
 window.syncProductsQueue = syncProductsQueue;
 
 console.log("✅ Products.js loaded with complete offline support");
+<script src="js/products.js"></script>;
