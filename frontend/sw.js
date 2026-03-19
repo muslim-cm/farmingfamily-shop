@@ -44,13 +44,12 @@ self.addEventListener("install", (event) => {
   );
 });
 
-// Activate - Clean old caches
+// Activate - Clean old caches and take control immediately
 self.addEventListener("activate", (event) => {
   console.log("✅ Activating Service Worker v7.0...");
   event.waitUntil(
-    caches
-      .keys()
-      .then((cacheNames) => {
+    Promise.all([
+      caches.keys().then((cacheNames) => {
         return Promise.all(
           cacheNames.map((cache) => {
             if (cache !== CACHE_NAME) {
@@ -59,8 +58,11 @@ self.addEventListener("activate", (event) => {
             }
           })
         );
-      })
-      .then(() => self.clients.claim())
+      }),
+      self.clients.claim()
+    ]).then(() => {
+      console.log("✅ Service Worker now controls all clients");
+    })
   );
 });
 
