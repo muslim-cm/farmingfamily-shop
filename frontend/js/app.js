@@ -476,6 +476,15 @@ window.offlineDB = {
   checkDB: window.checkOfflineDB
 };
 
+// ========== EXPORT FUNCTIONS FOR OTHER SCRIPTS ==========
+window.offlineDB = {
+  cacheProducts,
+  getCachedProducts,
+  syncAllQueues,
+  isOnline,
+  getDB: () => db,
+  checkDB: window.checkOfflineDB
+};
+
 console.log("✅ App.js loaded with full offline support");
 console.log("ℹ️ Type 'checkOfflineDB()' in console to check database status");
-<script src="js/app.js"></script>;
