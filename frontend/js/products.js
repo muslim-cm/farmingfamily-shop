@@ -168,18 +168,23 @@ if (isOnline()) {
 
 // If online fetch failed or there was an error, load from cache
 if (!onlineSuccess) {
+  console.log('🔄 Offline mode: attempting to load products from cache');
   try {
     let products = [];
-
-    // Prefer using window.offlineDB if available (more reliable)
+    
+    // Check if offlineDB is available
+    console.log('📡 window.offlineDB exists?', !!window.offlineDB);
     if (window.offlineDB && typeof window.offlineDB.getCachedProducts === 'function') {
+      console.log('✅ Using window.offlineDB.getCachedProducts');
       products = await window.offlineDB.getCachedProducts();
+      console.log(`📦 Retrieved ${products.length} products from offlineDB`);
     } else {
-      // Fallback to direct IndexedDB access
+      console.log('⚠️ Falling back to direct IndexedDB access');
       const db = await getDB();
       const tx = db.transaction("products", "readonly");
       const store = tx.objectStore("products");
       products = await store.getAll();
+      console.log(`📦 Retrieved ${products.length} products via direct IndexedDB`);
     }
 
     // Apply search filter if needed
@@ -190,12 +195,15 @@ if (!onlineSuccess) {
           p.name_bengali.toLowerCase().includes(term) ||
           (p.name_english && p.name_english.toLowerCase().includes(term))
       );
+      console.log(`🔍 After filtering, ${products.length} products remain`);
     }
 
     if (products.length > 0) {
+      console.log('✅ Products found, displaying them');
       showOfflineMessage();
       displayProducts(products);
     } else {
+      console.log('❌ No products in cache');
       productsList.innerHTML = `
         <tr>
           <td colspan="7" class="text-center" style="padding: 40px; color: #666;">
@@ -206,7 +214,7 @@ if (!onlineSuccess) {
       `;
     }
   } catch (error) {
-    console.error("Error loading from cache:", error);
+    console.error("❌ Error loading from cache:", error);
     productsList.innerHTML = `
       <tr>
         <td colspan="7" class="text-center" style="color: #ff6b6b; padding: 40px;">
