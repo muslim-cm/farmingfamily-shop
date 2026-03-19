@@ -169,10 +169,18 @@ if (isOnline()) {
 // If online fetch failed or there was an error, load from cache
 if (!onlineSuccess) {
   try {
-    const db = await getDB();
-    const tx = db.transaction("products", "readonly");
-    const store = tx.objectStore("products");
-    let products = await store.getAll();
+    let products = [];
+
+    // Prefer using window.offlineDB if available (more reliable)
+    if (window.offlineDB && typeof window.offlineDB.getCachedProducts === 'function') {
+      products = await window.offlineDB.getCachedProducts();
+    } else {
+      // Fallback to direct IndexedDB access
+      const db = await getDB();
+      const tx = db.transaction("products", "readonly");
+      const store = tx.objectStore("products");
+      products = await store.getAll();
+    }
 
     // Apply search filter if needed
     if (searchTerm) {
