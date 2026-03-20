@@ -2,26 +2,19 @@
   publish = "frontend"
   command = ""
 
-# Serve static files correctly
-[[redirects]]
-  from = "/js/*"
-  to = "/js/:splat"
-  status = 200
-  force = true
+# Ensure JS files are served correctly
+[[headers]]
+  for = "/*.js"
+  [headers.values]
+    Content-Type = "application/javascript"
 
-[[redirects]]
-  from = "/css/*"
-  to = "/css/:splat"
-  status = 200
-  force = true
+# Ensure CSS files are served correctly
+[[headers]]
+  for = "/*.css"
+  [headers.values]
+    Content-Type = "text/css"
 
-[[redirects]]
-  from = "/icons/*"
-  to = "/icons/:splat"
-  status = 200
-  force = true
-
-# Catch-all redirect for SPA
+# Redirects
 [[redirects]]
   from = "/*"
   to = "/index.html"
