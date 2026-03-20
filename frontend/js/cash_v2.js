@@ -5,9 +5,6 @@
 // সম্পূর্ণ বাংলায়
 // ===========================================
 
-const SUPABASE_URL = "https://vhdjqgwbeezmwllfbljp.supabase.co";
-const API_BASE = `${SUPABASE_URL}/functions/v1`;
-
 // Check authentication
 const userStr = localStorage.getItem("farming_user") || localStorage.getItem("user");
 if (!userStr) window.location.href = "index.html";
