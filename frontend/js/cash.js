@@ -66,19 +66,11 @@ function getBadgeClass(type) {
 async function loadBalance() {
   try {
     const sessionToken = localStorage.getItem("session_token");
-    const response = await fetch(endpoint, {
-      method: "POST",
+    const response = await fetch(`${API_BASE}/cash-api/balance`, {
       headers: {
         Authorization: `Bearer ${sessionToken}`,
         "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        transaction_type: transactionType,
-        amount,
-        description,
-        payment_method: paymentMethod,
-        created_by: currentUser.username
-      })
+      }
     });
     const data = await response.json();
 
