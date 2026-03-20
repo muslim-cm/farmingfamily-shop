@@ -5,10 +5,6 @@
 // সম্পূর্ণ বাংলায়
 // ===========================================
 
-// Use global values from app.js (they are attached to window)
-const SUPABASE_URL = window.SUPABASE_URL || "https://vhdjqgwbeezmwllfbljp.supabase.co";
-const API_BASE = window.API_BASE || `${SUPABASE_URL}/functions/v1`;
-
 // Check authentication – read user from localStorage directly
 const currentUser = JSON.parse(
   localStorage.getItem("farming_user") || localStorage.getItem("user")
@@ -20,7 +16,6 @@ if (currentUser.role === "cashier") {
   alert("⚠️ আপনার এই পৃষ্ঠা দেখার অনুমতি নেই!");
   window.location.href = "sales.html";
 }
-
 // Format currency
 function formatCurrency(amount) {
   return parseFloat(amount || 0).toFixed(2) + " টাকা";
