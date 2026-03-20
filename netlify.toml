@@ -2,19 +2,32 @@
   publish = "frontend"
   command = ""
 
-# This ensures /frontend/ paths work
+# Serve static files correctly
 [[redirects]]
-  from = "/frontend/*"
-  to = "/:splat"
+  from = "/js/*"
+  to = "/js/:splat"
   status = 200
+  force = true
 
-# Root redirect
 [[redirects]]
-  from = "/"
+  from = "/css/*"
+  to = "/css/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/icons/*"
+  to = "/icons/:splat"
+  status = 200
+  force = true
+
+# Catch-all redirect for SPA
+[[redirects]]
+  from = "/*"
   to = "/index.html"
   status = 200
 
-# Service worker headers - IMPORTANT for updates
+# Service worker headers
 [[headers]]
   for = "/sw.js"
   [headers.values]
