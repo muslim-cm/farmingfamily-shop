@@ -732,4 +732,4 @@ window.deleteProduct = deleteProduct;
 window.loadProducts = loadProducts;
 window.syncProductsQueue = syncProductsQueue;
 
-console.log("✅ Products.js loaded with complete offline support");
+console.log("✅ Products_v2.js loaded with complete offline support");
