@@ -51,7 +51,7 @@ async function getDB() {
   if (db) return db;
 
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open("FarmingFamilyOffline", 2);
+    const request = indexedDB.open("FarmingFamilyOffline", 3);
 
     request.onerror = () => reject(request.error);
     request.onsuccess = () => {
