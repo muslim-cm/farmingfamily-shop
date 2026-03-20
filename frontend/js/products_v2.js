@@ -143,89 +143,90 @@ async function loadProducts(searchTerm = "") {
 
   let products = [];
 
- // Try online first
-let onlineSuccess = false;
-if (isOnline()) {
-  try {
-    let url = `${API_BASE}/products-api/products`;
-    if (searchTerm) {
-      url += `?search=${encodeURIComponent(searchTerm)}`;
-    }
+  // Try online first
+  let onlineSuccess = false;
+  if (isOnline()) {
+    try {
+      let url = `${API_BASE}/products-api/products`;
+      if (searchTerm) {
+        url += `?search=${encodeURIComponent(searchTerm)}`;
+      }
 
-    const response = await fetch(url);
-    const data = await response.json();
+      const response = await fetch(url);
+      const data = await response.json();
 
-    if (data.success) {
-      products = data.data;
-      await cacheProducts(products);
-      displayProducts(products);
-      onlineSuccess = true;
+      if (data.success) {
+        products = data.data;
+        await cacheProducts(products);
+        displayProducts(products);
+        onlineSuccess = true;
+      }
+    } catch (error) {
+      console.log("Online fetch failed, loading from cache...");
     }
-  } catch (error) {
-    console.log("Online fetch failed, loading from cache...");
   }
-}
 
-// If online fetch failed or there was an error, load from cache
-if (!onlineSuccess) {
-  try {
-    let products = [];
+  // If online fetch failed or there was an error, load from cache
+  if (!onlineSuccess) {
+    try {
+      let products = [];
 
-    // Use the global offlineDB object (from app.js) if available
-    if (window.offlineDB && typeof window.offlineDB.getCachedProducts === 'function') {
-      products = await window.offlineDB.getCachedProducts();
-    } else {
-      // Fallback: direct IndexedDB access
-      const db = await new Promise((resolve, reject) => {
-        const req = indexedDB.open('FarmingFamilyOffline');
-        req.onsuccess = () => resolve(req.result);
-        req.onerror = reject;
-      });
-      const tx = db.transaction('products', 'readonly');
-      const store = tx.objectStore('products');
-      products = await new Promise((resolve, reject) => {
-        const req = store.getAll();
-        req.onsuccess = () => resolve(req.result);
-        req.onerror = reject;
-      });
-    }
+      // Use the global offlineDB object (from app.js) if available
+      if (window.offlineDB && typeof window.offlineDB.getCachedProducts === "function") {
+        products = await window.offlineDB.getCachedProducts();
+      } else {
+        // Fallback: direct IndexedDB access
+        const db = await new Promise((resolve, reject) => {
+          const req = indexedDB.open("FarmingFamilyOffline");
+          req.onsuccess = () => resolve(req.result);
+          req.onerror = reject;
+        });
+        const tx = db.transaction("products", "readonly");
+        const store = tx.objectStore("products");
+        products = await new Promise((resolve, reject) => {
+          const req = store.getAll();
+          req.onsuccess = () => resolve(req.result);
+          req.onerror = reject;
+        });
+      }
 
-    // Apply search filter if needed
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      products = products.filter(
-        (p) =>
-          p.name_bengali.toLowerCase().includes(term) ||
-          (p.name_english && p.name_english.toLowerCase().includes(term))
-      );
-    }
+      // Apply search filter if needed
+      if (searchTerm) {
+        const term = searchTerm.toLowerCase();
+        products = products.filter(
+          (p) =>
+            p.name_bengali.toLowerCase().includes(term) ||
+            (p.name_english && p.name_english.toLowerCase().includes(term))
+        );
+      }
 
-    if (products.length > 0) {
-      showOfflineMessage();
-      displayProducts(products);
-    } else {
+      if (products.length > 0) {
+        showOfflineMessage();
+        displayProducts(products);
+      } else {
+        productsList.innerHTML = `
+          <tr>
+            <td colspan="7" class="text-center" style="padding: 40px; color: #666;">
+              <i class="fas fa-wifi-slash" style="font-size: 40px; margin-bottom: 15px;"></i>
+              <p>অফলাইনে কোন পণ্য পাওয়া যায়নি। অনলাইনে সংযুক্ত হয়ে আবার চেষ্টা করুন।</p>
+            </td>
+          </tr>
+        `;
+      }
+    } catch (error) {
+      console.error("Error loading from cache:", error);
       productsList.innerHTML = `
         <tr>
-          <td colspan="7" class="text-center" style="padding: 40px; color: #666;">
-            <i class="fas fa-wifi-slash" style="font-size: 40px; margin-bottom: 15px;"></i>
-            <p>অফলাইনে কোন পণ্য পাওয়া যায়নি। অনলাইনে সংযুক্ত হয়ে আবার চেষ্টা করুন।</p>
+          <td colspan="7" class="text-center" style="color: #ff6b6b; padding: 40px;">
+            <i class="fas fa-exclamation-triangle" style="font-size: 40px; margin-bottom: 15px;"></i>
+            <p>পণ্যের তালিকা লোড করতে সমস্যা হয়েছে</p>
+            <button onclick="loadProducts()" style="margin-top: 15px; padding: 8px 20px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer;">
+              <i class="fas fa-redo"></i> আবার চেষ্টা করুন
+            </button>
           </td>
         </tr>
       `;
     }
-  } catch (error) {
-    console.error("Error loading from cache:", error);
-    productsList.innerHTML = `
-      <tr>
-        <td colspan="7" class="text-center" style="color: #ff6b6b; padding: 40px;">
-          <i class="fas fa-exclamation-triangle" style="font-size: 40px; margin-bottom: 15px;"></i>
-          <p>পণ্যের তালিকা লোড করতে সমস্যা হয়েছে</p>
-          <button onclick="loadProducts()" style="margin-top: 15px; padding: 8px 20px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer;">
-            <i class="fas fa-redo"></i> আবার চেষ্টা করুন
-          </button>
-        </td>
-      </tr>
-    `;
   }
 }
 
@@ -732,4 +733,3 @@ window.loadProducts = loadProducts;
 window.syncProductsQueue = syncProductsQueue;
 
 console.log("✅ Products.js loaded with complete offline support");
-
