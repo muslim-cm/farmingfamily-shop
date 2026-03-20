@@ -65,7 +65,13 @@ function getBadgeClass(type) {
 // Load current balance
 async function loadBalance() {
   try {
-    const response = await fetch(`${API_BASE}/cash-api/balance`);
+    const sessionToken = localStorage.getItem("session_token");
+    const response = await fetch(`${API_BASE}/cash-api/balance`, {
+      headers: {
+        Authorization: `Bearer ${sessionToken}`,
+        "Content-Type": "application/json"
+      }
+    });
     const data = await response.json();
 
     if (data.success) {
@@ -82,7 +88,13 @@ async function loadBalance() {
 async function loadTodayTransactions() {
   try {
     const today = new Date().toISOString().split("T")[0];
-    const response = await fetch(`${API_BASE}/cash-api/transactions?date=${today}`);
+    const sessionToken = localStorage.getItem("session_token");
+    const response = await fetch(`${API_BASE}/cash-api/transactions?date=${today}`, {
+      headers: {
+        Authorization: `Bearer ${sessionToken}`,
+        "Content-Type": "application/json"
+      }
+    });
     const data = await response.json();
 
     const container = document.getElementById("todayTransactions");
@@ -129,7 +141,13 @@ async function loadTodayTransactions() {
 // Load recent transactions
 async function loadRecentTransactions() {
   try {
-    const response = await fetch(`${API_BASE}/cash-api/transactions?limit=20`);
+    const sessionToken = localStorage.getItem("session_token");
+    const response = await fetch(`${API_BASE}/cash-api/transactions?limit=20`, {
+      headers: {
+        Authorization: `Bearer ${sessionToken}`,
+        "Content-Type": "application/json"
+      }
+    });
     const data = await response.json();
 
     const container = document.getElementById("recentTransactions");
@@ -246,9 +264,13 @@ document.getElementById("transactionForm").addEventListener("submit", async func
   btn.disabled = true;
 
   try {
+    const sessionToken = localStorage.getItem("session_token");
     const response = await fetch(endpoint, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        Authorization: `Bearer ${sessionToken}`,
+        "Content-Type": "application/json"
+      },
       body: JSON.stringify({
         transaction_type: transactionType,
         amount,
