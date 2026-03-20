@@ -5,11 +5,11 @@
 // সম্পূর্ণ বাংলায়
 // ===========================================
 
-// Use global SUPABASE_URL and API_BASE from app.js if available, otherwise fallback
+// Use global values from app.js (they are attached to window)
 const SUPABASE_URL = window.SUPABASE_URL || "https://vhdjqgwbeezmwllfbljp.supabase.co";
 const API_BASE = window.API_BASE || `${SUPABASE_URL}/functions/v1`;
 
-// Check authentication – read user from localStorage once
+// Check authentication – read user from localStorage directly
 const currentUser = JSON.parse(
   localStorage.getItem("farming_user") || localStorage.getItem("user")
 );
