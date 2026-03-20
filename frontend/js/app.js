@@ -9,6 +9,8 @@ try {
 
   const SUPABASE_URL = "https://vhdjqgwbeezmwllfbljp.supabase.co";
   const API_BASE = `${SUPABASE_URL}/functions/v1`;
+  window.SUPABASE_URL = SUPABASE_URL;
+  window.API_BASE = API_BASE;
 
   // ========== OFFLINE DATABASE SETUP (IndexedDB) ==========
   let db;

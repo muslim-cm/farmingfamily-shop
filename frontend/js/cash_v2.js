@@ -5,10 +5,15 @@
 // সম্পূর্ণ বাংলায়
 // ===========================================
 
-// Check authentication
-const userStr = localStorage.getItem("farming_user") || localStorage.getItem("user");
-if (!userStr) window.location.href = "index.html";
-const currentUser = JSON.parse(userStr);
+// Use global SUPABASE_URL and API_BASE from app.js if available, otherwise fallback
+const SUPABASE_URL = window.SUPABASE_URL || "https://vhdjqgwbeezmwllfbljp.supabase.co";
+const API_BASE = window.API_BASE || `${SUPABASE_URL}/functions/v1`;
+
+// Check authentication – read user from localStorage once
+const currentUser = JSON.parse(
+  localStorage.getItem("farming_user") || localStorage.getItem("user")
+);
+if (!currentUser) window.location.href = "index.html";
 
 // Redirect cashier if needed
 if (currentUser.role === "cashier") {
