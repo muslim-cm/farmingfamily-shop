@@ -4,7 +4,12 @@
 // FARMING FAMILY SHOP - CASH MANAGEMENT
 // সম্পূর্ণ বাংলায়
 // ===========================================
-
+// Verify token exists before making requests
+const sessionToken = localStorage.getItem("session_token");
+if (!sessionToken) {
+  console.log("No session token, redirecting to login");
+  window.location.href = "index.html";
+}
 const SUPABASE_URL = "https://vhdjqgwbeezmwllfbljp.supabase.co";
 const API_BASE = `${SUPABASE_URL}/functions/v1`;
 

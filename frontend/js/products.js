@@ -732,4 +732,4 @@ window.loadProducts = loadProducts;
 window.syncProductsQueue = syncProductsQueue;
 
 console.log("✅ Products.js loaded with complete offline support");
-<script src="js/products.js"></script>;
+

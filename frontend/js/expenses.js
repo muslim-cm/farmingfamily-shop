@@ -429,4 +429,3 @@ window.saveExpense = saveExpense;
 window.calculatePurchaseTotal = calculatePurchaseTotal;
 
 console.log("✅ Expenses.js loaded successfully");
-<script src="js/expenses.js"></script>
