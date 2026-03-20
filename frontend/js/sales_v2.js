@@ -667,7 +667,7 @@ Object.defineProperty(window, "dbReady", {
 window.initOfflineDB = initOfflineDB;
 
 // Log status
-console.log("✅ Sales.js loaded with globals");
+console.log("✅ sales_v2.js loaded with globals");
 console.log("📊 db available:", !!db);
 console.log("📊 dbReady:", dbReady);
 console.log("ℹ️ You can now use window.saveSale(), window.db, etc.");
